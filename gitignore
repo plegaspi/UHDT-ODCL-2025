@@ -1,3 +1,7 @@
+### Ignored Directories and Files ###
+yolo/datasets/*
+yolo/backgrounds/._*
+
 ### Linux ###
 *~
 
