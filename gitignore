@@ -1,5 +1,6 @@
 ### Ignored Directories and Files ###
 yolo/datasets/*
+!yolo/datasets/.gitkeep
 yolo/backgrounds/._*
 
 ### Linux ###

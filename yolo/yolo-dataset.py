@@ -5,6 +5,13 @@ import os
 import random
 import string
 from datetime import datetime
+import roboflow
+from dotenv import load_dotenv
+import sys
+
+load_dotenv()
+
+
 
 def calculate_centroid(points):
     x = points[:, 0]
@@ -106,7 +113,7 @@ def place_font_on_target(image, centroid, char, font_family, font_size, alphanum
     return image_base
 
 
-def draw_shape(background_img, shape, translation=(0, 0), rotation=0, scale=1, shape_color=(255, 0, 0), alphanum_color=(0,0,0), text='A', font_path='arial.ttf', padding=20, cross_thickness=32):
+def draw_shape(background_img, shape, translation=(0, 0), rotation=0, scale=1, shape_color=(255, 0, 0), alphanum_color=(0,0,0), text='A', font_path='arial.ttf', padding=0, cross_thickness=32):
     draw = ImageDraw.Draw(background_img)
     center = np.array(background_img.size) // 2
     radius = 160
@@ -214,25 +221,64 @@ def generate_translations(img, num_targets, padding=160):
     return np.array(translations)
 
 
-        
-
-    
 
 
 if __name__ == "__main__":
-    num_of_images = 2
-    max_targets_per_image = 10
-    min_targets_per_image = 5
+    num_of_images = 1
+    max_targets_per_image = 20
+    min_targets_per_image = 7
+    max_cls_targets = 10_000
+    cls_targets_counter = 0
+
+    
+    enable_mode = {
+        'obj': True,
+        'seg': True,
+        'cls': True
+    }
+    
+    enable_roboflow = {
+        'obj': True,
+        'seg': True,
+        'cls': True
+    }
+    
+    erase_after_upload = False
+    obj_project_id = os.environ.get("OBJ_PROJ_ID")
+    seg_project_id = os.environ.get("SEG_PROJ_ID")
+    cls_project_id = os.environ.get("CLS_PROJ_ID")
+    cls_padding = 20
+    
+
+    OBJ_ROBOFLOW_API_KEY = os.environ.get("OBJ_ROBOFLOW_API_KEY")
+    SEG_ROBOFLOW_API_KEY = os.environ.get("SEG_ROBOFLOW_API_KEY")
+    CLS_ROBOFLOW_API_KEY = os.environ.get("CLS_ROBOFLOW_API_KEY")
+    rf_obj = roboflow.Roboflow(api_key=OBJ_ROBOFLOW_API_KEY)
+    obj_workspace = rf_obj.workspace()
+    obj_project = rf_obj.project(obj_project_id)
+
+    rf_seg = roboflow.Roboflow(api_key=SEG_ROBOFLOW_API_KEY)
+    seg_workspace = rf_seg.workspace()
+    seg_project = seg_workspace.project(seg_project_id)
+
+    rf_cls = roboflow.Roboflow(api_key=CLS_ROBOFLOW_API_KEY)
+    cls_workspace = rf_cls.workspace()
+    cls_project = cls_workspace.project(cls_project_id)
+
+    current_date = datetime.now()
+    batch_name = f"{current_date.year}_{current_date.month}_{current_date.day}_{current_date.hour}_{current_date.minute}_{current_date.second}"
     backgrounds_dir = os.path.join("yolo", "backgrounds")
     backgrounds = [background_img_path for background_img_path in os.listdir(backgrounds_dir) if background_img_path.lower().endswith(('.png', '.jpg', '.jpeg')) and not background_img_path.startswith('.')]
-    current_date = datetime.now()
     dataset_base_path = os.path.join("yolo", "datasets",f"{current_date.year}_{current_date.month}_{current_date.day}_{current_date.hour}_{current_date.minute}_{current_date.second}")
     img_dir_path = os.path.join(dataset_base_path, "images")
     cls_img_dir_path = os.path.join(dataset_base_path, "cls-images")
     obj_label_dir_path = os.path.join(dataset_base_path, "obj_labels")
     seg_label_dir_path = os.path.join(dataset_base_path, "seg_labels")
     cls_label_dir_path = os.path.join(dataset_base_path, "cls_labels")
+    annotation_map_file_path = os.path.join('yolo', 'label_map.txt')
+    
     for i in range(num_of_images):
+
         sample_name = generate_random_string(10)
 
         if not os.path.exists(img_dir_path):
@@ -252,8 +298,10 @@ if __name__ == "__main__":
         shapes = ["circle", "cross", "pentagon", "quartercircle", "rectangle", "semicircle", "star", "triangle"]
         for x in shapes:
             shape_dir_path = os.path.join(cls_img_dir_path, x)
-            os.mkdir(shape_dir_path)
-
+            if not os.path.exists(shape_dir_path):
+                os.mkdir(shape_dir_path)
+        if not os.path.exists(cls_label_dir_path):
+            os.makedirs(cls_label_dir_path)
 
         img_file_path = os.path.join(img_dir_path, f"{sample_name}.png")
         obj_label_file_path = os.path.join(obj_label_dir_path, f"{sample_name}.txt")
@@ -273,14 +321,15 @@ if __name__ == "__main__":
                 alphanum_color = pick_random_color()
             alphanum_char = pick_random_alphanum()
             font_path = os.path.join('yolo', 'arial.ttf')
-            angle = random.randint(0, 361);
-            scale = random.uniform(0.3, 1.2)
+            angle = random.randint(0, 361)
+            scale = random.uniform(0.2, 0.7)
             background_img, points, centroid = draw_shape(background_img, shape, translations[i], angle, scale, shape_color, alphanum_color, alphanum_char, font_path, 10, 32)
 
             normalized_points = points / np.array(background_img.size)
             shape_id = get_shape_class_id(shape)
             cls_sample_name = generate_random_string(10)
             cls_img_file_path = os.path.join(cls_img_dir_path, shape, f"{cls_sample_name}.png")
+            cls_label_file_path = os.path.join(cls_label_dir_path, f"{cls_sample_name}.txt")
 
 
 
@@ -291,6 +340,8 @@ if __name__ == "__main__":
                 min_y = np.min(normalized_points[:, 1])
                 max_y = np.max(normalized_points[:, 1])
                 label_file.write(f"{shape_id} {(max_x+min_x)/2} {(max_y+min_y)/2} {max_x-min_x} {max_y-min_y}\n")
+            
+                
 
 
 
@@ -303,29 +354,65 @@ if __name__ == "__main__":
                 label_file.write(f"\n")
 
 
-            # Classification Dataset
-            padding = 20
-            min_x = np.min(points[:, 0]) - padding
-            max_x = np.max(points[:, 0]) + padding
-            min_y = np.min(points[:, 1]) - padding
-            max_y = np.max(points[:, 1]) + padding
 
-            while min_x <= 0:
-                min_x += 1
-            while max_x >= background_img.width:
-                max_x -= 1
-            
-            while min_y <= 0:
-                min_y += 1
-            while max_y >= background_img.height:
-                max_x -= 1
-            
-            background_img.crop((min_x, min_y, max_x, max_y)).save(cls_img_file_path)
+            if cls_targets_counter < max_cls_targets:
+                # Classification Dataset
+                min_x = np.min(points[:, 0]) - cls_padding
+                max_x = np.max(points[:, 0]) + cls_padding
+                min_y = np.min(points[:, 1]) - cls_padding
+                max_y = np.max(points[:, 1]) + cls_padding
+
+                while min_x <= 0:
+                    min_x += 1
+                while max_x >= background_img.width:
+                    max_x -= 1
+                
+                while min_y <= 0:
+                    min_y += 1
+                while max_y >= background_img.height:
+                    max_x -= 1
+                
+                
+                background_img.crop((min_x, min_y, max_x, max_y)).save(cls_img_file_path)
+                with open(cls_label_file_path, "+a") as label_file:
+                    label_file.write(f"{shape_id} 0.5 0.5 1 1")
+                
+
+                if (enable_roboflow['cls']):
+                    print(
+                        cls_project.single_upload(
+                        batch_name=batch_name,
+                        image_path=cls_img_file_path,
+                        annotation_path=cls_label_file_path,
+                        annotation_labelmap=annotation_map_file_path,
+                        )
+                    )
+
+                if erase_after_upload:
+                    os.remove(cls_img_file_path)
+                    os.remove(cls_label_file_path)
+
             
         background_img.save(img_file_path)
-        background_img.show()
-        
-
-
-
-
+        if enable_roboflow['obj'] == True:
+            print(
+                obj_project.single_upload(
+                batch_name=batch_name,
+                image_path=img_file_path,
+                annotation_path=obj_label_file_path,
+                annotation_labelmap=annotation_map_file_path,
+                )
+            )
+        if enable_roboflow['seg'] == True:
+            print(
+                seg_project.single_upload(
+                batch_name=batch_name,
+                image_path=img_file_path,
+                annotation_path=seg_label_file_path,
+                annotation_labelmap=annotation_map_file_path,
+                )
+            )
+        if erase_after_upload:
+            os.remove(img_file_path)
+            os.remove(obj_label_dir_path)
+            os.remove(seg_label_file_path)
