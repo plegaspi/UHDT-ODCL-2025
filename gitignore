@@ -2,6 +2,7 @@
 yolo/datasets/*
 !yolo/datasets/.gitkeep
 yolo/backgrounds/._*
+.env
 
 ### Linux ###
 *~
