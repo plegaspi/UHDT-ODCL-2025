@@ -280,6 +280,10 @@ def apply_erosion(image, kernel_size=(5, 5), iterations=2):
     kernel = np.ones(kernel_size, np.uint8)
     return cv.erode(image, kernel, iterations=iterations)
 
+def apply_dilation(image, kernel_size=(5, 5), iterations=2):
+    kernel = np.ones(kernel_size, np.uint8)
+    return cv.dilate(image, kernel, iterations=iterations)
+
 def fillBackground(img, color, erosion_applied = True):
     model_name = "isnet-general-use"
     session = new_session(model_name)
@@ -298,15 +302,25 @@ def fillBackground(img, color, erosion_applied = True):
 
     return img
 
+def create_masks(image, color_value):
+    mask = 0
+    mask += cv.inRange(image, color_value, color_value)
+    return mask
+
 def classify_color(img, initial_k=30):
     quantized_img = quantize_image(img,initial_k)[0]
     filtered_img = cv.bilateralFilter(quantized_img, 10, 50, 25)
     bg_removed_img = fillBackground(filtered_img, (0, 255, 255))
     final_img, color_data = quantize_image(bg_removed_img, 3)
     colors = process_color_data(color_data, color_count)
-    return final_img, colors
-
-    
+    bg_color_values = colors[1][2]
+    alphanum_color_values = colors[2][2]
+    print(bg_color_values)
+    bg_mask = create_masks(final_img, bg_color_values)
+    bg_mask_result = cv.bitwise_and(final_img, final_img, mask=bg_mask)
+    alphanum_mask = create_masks(final_img, alphanum_color_values)
+    alphanum_mask_result = cv.bitwise_and(final_img, final_img, mask=alphanum_mask)
+    return final_img, colors, bg_mask_result, alphanum_mask_result
 
 if __name__ == "__main__":
     color_count = {
@@ -325,12 +339,14 @@ if __name__ == "__main__":
     folder_path = os.path.join('cropped_images', 'datasets','processed', '3-8-24 DJI Images-10')
     for img_file_path in os.listdir(folder_path):
         img = cv.imread(os.path.join(folder_path, img_file_path))
-        img, colors = classify_color(img)
+        orig_img = img
+        img, colors, bg_masked, alphanum_masked = classify_color(img)
         print(colors)
         for i in range(len(colors)):
             print(colors[i][0])
             color_count[colors[i][0]] += 1
         #print(color_count)
-        cv.imshow(str(1), img)
+        img_arr = np.hstack([orig_img, img, bg_masked, alphanum_masked])
+        cv.imshow("Test", img_arr)
         cv.waitKey(0)
         cv.destroyAllWindows()
