@@ -4,6 +4,10 @@ yolo/datasets/*
 yolo/backgrounds/._*
 .env
 
+cropped_images/datasets/*
+!cropped_images/datasets/pre-processed.gitkeep
+!cropped_images/datasets/processed/.gitkeep
+
 ### Linux ###
 *~
 
