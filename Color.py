@@ -3,6 +3,7 @@ import cv2 as cv
 import numpy as np
 from rembg import remove, new_session
 import os
+from paddleocr import PaddleOCR
 
 
 def identify_color(cluster_center):
@@ -320,7 +321,7 @@ def classify_color(img, initial_k=30):
     bg_mask_result = cv.bitwise_and(final_img, final_img, mask=bg_mask)
     alphanum_mask = create_masks(final_img, alphanum_color_values)
     alphanum_mask_result = cv.bitwise_and(final_img, final_img, mask=alphanum_mask)
-    return final_img, colors, bg_mask_result, alphanum_mask_result
+    return final_img, colors, bg_mask_result, alphanum_mask_result, bg_mask, alphanum_mask
 
 if __name__ == "__main__":
     color_count = {
@@ -340,7 +341,7 @@ if __name__ == "__main__":
     for img_file_path in os.listdir(folder_path):
         img = cv.imread(os.path.join(folder_path, img_file_path))
         orig_img = img
-        img, colors, bg_masked, alphanum_masked = classify_color(img)
+        img, colors, bg_masked, alphanum_masked, bg_mask, alphanum_mask = classify_color(img)
         print(colors)
         for i in range(len(colors)):
             print(colors[i][0])
