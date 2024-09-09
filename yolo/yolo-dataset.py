@@ -224,10 +224,10 @@ def generate_translations(img, num_targets, padding=160):
 
 
 if __name__ == "__main__":
-    num_of_images = 1
-    max_targets_per_image = 20
-    min_targets_per_image = 7
-    max_cls_targets = 10_000
+    num_of_images = 1000
+    max_targets_per_image = 26
+    min_targets_per_image = 10
+    max_cls_targets = 9000
     cls_targets_counter = 0
 
     
@@ -243,7 +243,7 @@ if __name__ == "__main__":
         'cls': True
     }
     
-    erase_after_upload = False
+    erase_after_upload = True
     obj_project_id = os.environ.get("OBJ_PROJ_ID")
     seg_project_id = os.environ.get("SEG_PROJ_ID")
     cls_project_id = os.environ.get("CLS_PROJ_ID")
@@ -414,5 +414,5 @@ if __name__ == "__main__":
             )
         if erase_after_upload:
             os.remove(img_file_path)
-            os.remove(obj_label_dir_path)
+            os.remove(obj_label_file_path)
             os.remove(seg_label_file_path)
