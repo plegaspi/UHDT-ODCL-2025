@@ -320,9 +320,9 @@ if __name__ == "__main__":
             while alphanum_color == shape_color:
                 alphanum_color = pick_random_color()
             alphanum_char = pick_random_alphanum()
-            font_path = os.path.join('yolo', 'arial.ttf')
+            font_path = os.path.join('yolo', 'fonts', 'arial.ttf')
             angle = random.randint(0, 361)
-            scale = random.uniform(0.2, 0.7)
+            scale = random.uniform(0.2, 0.8)
             background_img, points, centroid = draw_shape(background_img, shape, translations[i], angle, scale, shape_color, alphanum_color, alphanum_char, font_path, 10, 32)
 
             normalized_points = points / np.array(background_img.size)
