@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import glob
 import numpy as np
 import os
@@ -8,6 +8,7 @@ from datetime import datetime
 import roboflow
 from dotenv import load_dotenv
 import sys
+import cv2 as cv
 
 load_dotenv()
 
@@ -221,7 +222,31 @@ def generate_translations(img, num_targets, padding=160):
     return np.array(translations)
 
 
+def apply_motion_blur(image, direction='horizontal', blur_strength=15):
+    unblurred_img = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    
+    if blur_strength <= 0:
+        raise ValueError("Blur strength must be a positive integer greater than 0")
 
+    kernel = np.zeros((blur_strength, blur_strength))
+    
+    if direction.lower() == 'horizontal':
+        kernel[int((blur_strength - 1) / 2), :] = np.ones(blur_strength)
+        
+    elif direction.lower() == 'vertical':
+        kernel[:, int((blur_strength - 1) / 2)] = np.ones(blur_strength)
+
+    elif direction.lower() == 'diagonal':
+        np.fill_diagonal(kernel, 1)
+
+    else:
+        raise ValueError("Direction must be 'horizontal', 'vertical', or 'diagonal'")
+
+    kernel = kernel / blur_strength
+    blurred_image = cv.filter2D(unblurred_img, -1, kernel)
+    blurred_image = Image.fromarray(cv.cvtColor(blurred_image, cv.COLOR_BGR2RGB))
+    
+    return blurred_image
 
 if __name__ == "__main__":
     num_of_images = 1000
@@ -229,7 +254,17 @@ if __name__ == "__main__":
     min_targets_per_image = 10
     max_cls_targets = 9000
     cls_targets_counter = 0
-
+    min_angle = 0
+    max_angle = 360
+    min_scale = 0.25
+    max_scale = 0.8
+    min_cls_padding = 0
+    max_cls_padding = 20
+    min_cls_blur_strength = 10
+    min_img_blur_strength = 100
+    max_cls_blur_strength = 23
+    max_img_blur_strength = 110
+    erase_after_upload = False
     
     enable_mode = {
         'obj': True,
@@ -240,14 +275,12 @@ if __name__ == "__main__":
     enable_roboflow = {
         'obj': True,
         'seg': True,
-        'cls': True
+        'cls': False
     }
     
-    erase_after_upload = True
     obj_project_id = os.environ.get("OBJ_PROJ_ID")
     seg_project_id = os.environ.get("SEG_PROJ_ID")
     cls_project_id = os.environ.get("CLS_PROJ_ID")
-    cls_padding = 20
     
 
     OBJ_ROBOFLOW_API_KEY = os.environ.get("OBJ_ROBOFLOW_API_KEY")
@@ -320,11 +353,14 @@ if __name__ == "__main__":
             while alphanum_color == shape_color:
                 alphanum_color = pick_random_color()
             alphanum_char = pick_random_alphanum()
-            font_path = os.path.join('yolo', 'fonts', 'arial.ttf')
-            angle = random.randint(0, 361)
-            scale = random.uniform(0.2, 0.8)
-            background_img, points, centroid = draw_shape(background_img, shape, translations[i], angle, scale, shape_color, alphanum_color, alphanum_char, font_path, 10, 32)
+            fonts_dir = os.path.join('yolo', 'fonts')
+            font_paths = os.listdir(fonts_dir)
+            font_index = random.randint(0, len(font_paths)-1)
+            font_path = os.path.join('yolo', 'fonts', font_paths[font_index])
+            angle = random.randint(min_angle, max_angle)
+            scale = random.uniform(min_scale, max_scale)
 
+            background_img, points, centroid = draw_shape(background_img, shape, translations[i], angle, scale, shape_color, alphanum_color, alphanum_char, font_path, 10, 32)
             normalized_points = points / np.array(background_img.size)
             shape_id = get_shape_class_id(shape)
             cls_sample_name = generate_random_string(10)
@@ -354,7 +390,7 @@ if __name__ == "__main__":
                 label_file.write(f"\n")
 
 
-
+            cls_padding = random.randint(min_cls_padding, max_cls_padding)
             if cls_targets_counter < max_cls_targets:
                 # Classification Dataset
                 min_x = np.min(points[:, 0]) - cls_padding
@@ -373,7 +409,12 @@ if __name__ == "__main__":
                     max_x -= 1
                 
                 
-                background_img.crop((min_x, min_y, max_x, max_y)).save(cls_img_file_path)
+                cls_img = background_img.crop((min_x, min_y, max_x, max_y))
+                blur_type = random.choice(['horizontal', 'vertical', 'diagonal', 'none'])
+                if blur_type != "none":
+                    blur_strength = random.randint(min_cls_blur_strength,max_cls_blur_strength)
+                    cls_img = apply_motion_blur(cls_img, blur_type, blur_strength)
+                cls_img.save(cls_img_file_path)
                 with open(cls_label_file_path, "+a") as label_file:
                     label_file.write(f"{shape_id} 0.5 0.5 1 1")
                 
@@ -392,7 +433,11 @@ if __name__ == "__main__":
                     os.remove(cls_img_file_path)
                     os.remove(cls_label_file_path)
 
-            
+        blur_type = random.choice(['horizontal', 'vertical', 'diagonal', 'none'])
+        if blur_type != "none":
+            blur_strength = random.randint(min_img_blur_strength,max_img_blur_strength)
+            print(blur_strength)
+            background_img = apply_motion_blur(background_img, blur_type, blur_strength)
         background_img.save(img_file_path)
         if enable_roboflow['obj'] == True:
             print(
@@ -411,7 +456,7 @@ if __name__ == "__main__":
                 annotation_path=seg_label_file_path,
                 annotation_labelmap=annotation_map_file_path,
                 )
-            )
+            )        
         if erase_after_upload:
             os.remove(img_file_path)
             os.remove(obj_label_file_path)
