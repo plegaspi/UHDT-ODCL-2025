@@ -32,7 +32,7 @@ def validate_class_name(class_value):
     return class_value.upper() in valid_class_names
 
 # Function to display multiple images (cv2 images) and class entry fields using Tkinter
-def create_gui(cv_images, rgb_values, csv_df, csv_file_path):
+def create_gui(cv_images, hsv_values, csv_df, csv_file_path):
     root = tk.Tk()
     root.title("Image Display with Class Entry")
 
@@ -64,9 +64,9 @@ def create_gui(cv_images, rgb_values, csv_df, csv_file_path):
             class_entry.grid(row=idx//2+1, column=idx%2, padx=10, pady=5)
             class_entries.append(class_entry)
 
-            # Check if this RGB value already has a class in the CSV
-            r, g, b = rgb_values[idx-2]
-            existing_class = get_class_for_rgb((r, g, b), csv_df)
+            # Check if this HSV value already has a class in the CSV
+            h, s, v = hsv_values[idx-2]
+            existing_class = get_class_for_hsv((h, s, v), csv_df)
 
             if existing_class:
                 existing_class_label = tk.Label(root, text=f"Existing Class: {existing_class}")
@@ -84,7 +84,7 @@ def create_gui(cv_images, rgb_values, csv_df, csv_file_path):
         # Validate and process class entries
         for idx in range(2, 4):  # Only process bottom two images
             class_value = class_entries[idx-2].get().strip().upper()
-            r, g, b = rgb_values[idx-2]
+            h, s, v = hsv_values[idx-2]
 
             if not validate_class_name(class_value):
                 messagebox.showerror("Invalid Class Name", f"The class '{class_value}' is not valid.")
@@ -92,14 +92,14 @@ def create_gui(cv_images, rgb_values, csv_df, csv_file_path):
 
             # If a valid class was entered, add or update the CSV
             if class_value:
-                existing_class = get_class_for_rgb((r, g, b), csv_df)
+                existing_class = get_class_for_hsv((h,s,v), csv_df)
 
-                # If the RGB value exists in the CSV, update it
+                # If the HSV value exists in the CSV, update it
                 if existing_class:
-                    csv_df.loc[(csv_df['r'] == r) & (csv_df['g'] == g) & (csv_df['b'] == b), 'class'] = class_value
-                    print(f"Updated class for RGB ({r}, {g}, {b}) to '{class_value}'")
+                    csv_df.loc[(csv_df['h'] == h) & (csv_df['s'] == s) & (csv_df['v'] == v), 'class'] = class_value
+                    print(f"Updated class for HSV ({h}, {s}, {v}) to '{class_value}'")
                 else:
-                    data_to_add.append({"class": class_value, "r": r, "g": g, "b": b})
+                    data_to_add.append({"class": class_value, "h": h, "s": s, "v": v})
 
         # Add new entries to the CSV if any
         if data_to_add:
@@ -119,9 +119,9 @@ def create_gui(cv_images, rgb_values, csv_df, csv_file_path):
 
     root.mainloop()
 
-# Helper function to check if RGB values exist in the CSV and retrieve their class
-def get_class_for_rgb(rgb, csv_df):
-    row = csv_df[(csv_df['r'] == rgb[0]) & (csv_df['g'] == rgb[1]) & (csv_df['b'] == rgb[2])]
+# Helper function to check if HSV values exist in the CSV and retrieve their class
+def get_class_for_hsv(hsv, csv_df):
+    row = csv_df[(csv_df['h'] == hsv[0]) & (csv_df['s'] == hsv[1]) & (csv_df['v'] == hsv[2])]
     if not row.empty:
         return row['class'].values[0]  # Return the class name
     return None
@@ -143,7 +143,7 @@ def load_or_create_csv():
     else:
         csv_file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")], parent=root)
         if csv_file:
-            df = pd.DataFrame(columns=['class', 'r', 'g', 'b', 'last_file_processed'])
+            df = pd.DataFrame(columns=['class', 'h', 's', 'v', 'last_file_processed'])
             df.to_csv(csv_file, index=False)  # Save the empty DataFrame to the file
             root.destroy()  # Close the root window after the file dialog
             return df, csv_file
@@ -160,9 +160,9 @@ def update_last_processed_file(csv_df, csv_file_path, last_file):
     csv_df['last_file_processed'] = last_file
     csv_df.to_csv(csv_file_path, index=False)
 
-# Test with multiple images and RGB values
+# Test with multiple images and HSV values
 if __name__ == "__main__":
-    folder_path = os.path.join('cropped_images', 'datasets', 'processed', '3-8-24 DJI Images-10')
+    folder_path = os.path.join('cropped_images', 'datasets', 'processed', '3-8-24 DJI Images-10-yolov10s-obj')
 
     # Load or create the CSV file
     csv_df, csv_file_path = load_or_create_csv()
@@ -188,17 +188,18 @@ if __name__ == "__main__":
 
         orig_img = img
         img, colors, bg_masked, alphanum_masked, bg_mask, alphanum_mask = classify_color(img)
+        #img = cv.cvtColor(img, cv.COLOR_LAB2BGR)
         print(colors)
 
         cv_images = [orig_img, img, bg_masked, alphanum_masked]
 
-        rgb_values = [
+        hsv_values = [
             colors[1][2].tolist(),
             colors[2][2].tolist()
         ]
 
-        # Pass the list of cv2 images, RGB values, and the CSV data
-        create_gui(cv_images, rgb_values, csv_df, csv_file_path)
+        # Pass the list of cv2 images, HSV values, and the CSV data
+        create_gui(cv_images, hsv_values, csv_df, csv_file_path)
 
         # Update the last processed file in the CSV
         update_last_processed_file(csv_df, csv_file_path, img_file_path)

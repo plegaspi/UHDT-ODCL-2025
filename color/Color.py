@@ -308,19 +308,30 @@ def create_masks(image, color_value):
     mask += cv.inRange(image, color_value, color_value)
     return mask
 
-def classify_color(img, initial_k=30):
+def classify_color(img, initial_k=35):
+    color_conversion = cv.COLOR_BGR2LAB
+    color_conversion_to_bgr = cv.COLOR_LAB2BGR
+    if color_conversion != None:
+        img = cv.cvtColor(img, color_conversion)
     quantized_img = quantize_image(img,initial_k)[0]
     filtered_img = cv.bilateralFilter(quantized_img, 10, 50, 25)
+    if color_conversion != None:
+        filtered_img = cv.cvtColor(filtered_img, color_conversion_to_bgr)
     bg_removed_img = fillBackground(filtered_img, (0, 255, 255))
+    if color_conversion != None:
+        bg_removed_img = cv.cvtColor(bg_removed_img, color_conversion)
     final_img, color_data = quantize_image(bg_removed_img, 3)
     colors = process_color_data(color_data)
     bg_color_values = colors[1][2]
     alphanum_color_values = colors[2][2]
-    print(bg_color_values)
-    bg_mask = create_masks(final_img, bg_color_values)
-    bg_mask_result = cv.bitwise_and(final_img, final_img, mask=bg_mask)
     alphanum_mask = create_masks(final_img, alphanum_color_values)
     alphanum_mask_result = cv.bitwise_and(final_img, final_img, mask=alphanum_mask)
+    bg_mask = create_masks(final_img, bg_color_values)
+    bg_mask_result = cv.bitwise_and(final_img, final_img, mask=bg_mask)
+    if color_conversion != None:
+        final_img = cv.cvtColor(final_img, color_conversion_to_bgr)
+        alphanum_mask_result = cv.cvtColor(alphanum_mask_result, color_conversion_to_bgr)
+        bg_mask_result = cv.cvtColor(bg_mask_result, color_conversion_to_bgr)
     return final_img, colors, bg_mask_result, alphanum_mask_result, bg_mask, alphanum_mask
 
 if __name__ == "__main__":
@@ -337,7 +348,7 @@ if __name__ == "__main__":
         'UNKNOWN': 0
     }
 
-    folder_path = os.path.join('cropped_images', 'datasets','processed', '3-8-24 DJI Images-10')
+    folder_path = os.path.join('cropped_images', 'datasets','processed', '3-8-24 DJI Images-10-nanotarget1')
     for img_file_path in os.listdir(folder_path):
         img = cv.imread(os.path.join(folder_path, img_file_path))
         orig_img = img
@@ -348,6 +359,7 @@ if __name__ == "__main__":
             color_count[colors[i][0]] += 1
         #print(color_count)
         img_arr = np.hstack([orig_img, img, bg_masked, alphanum_masked])
+        #img_arr = np.hstack([orig_img, img, bg_masked, alphanum_masked])
         cv.imshow("Test", img_arr)
         cv.waitKey(0)
         cv.destroyAllWindows()
