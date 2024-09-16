@@ -324,14 +324,15 @@ def classify_color(img, initial_k=35):
     colors = process_color_data(color_data)
     bg_color_values = colors[1][2]
     alphanum_color_values = colors[2][2]
+    print(alphanum_color_values)
+    if color_conversion != None:
+        final_img = cv.cvtColor(final_img, color_conversion_to_bgr)
+        bg_color_values = cv.cvtColor(bg_color_values.reshape(1, 1, 3), color_conversion_to_bgr).flatten()
+        alphanum_color_values = cv.cvtColor(alphanum_color_values.reshape(1,1,3), color_conversion_to_bgr).flatten()
     alphanum_mask = create_masks(final_img, alphanum_color_values)
     alphanum_mask_result = cv.bitwise_and(final_img, final_img, mask=alphanum_mask)
     bg_mask = create_masks(final_img, bg_color_values)
     bg_mask_result = cv.bitwise_and(final_img, final_img, mask=bg_mask)
-    if color_conversion != None:
-        final_img = cv.cvtColor(final_img, color_conversion_to_bgr)
-        alphanum_mask_result = cv.cvtColor(alphanum_mask_result, color_conversion_to_bgr)
-        bg_mask_result = cv.cvtColor(bg_mask_result, color_conversion_to_bgr)
     return final_img, colors, bg_mask_result, alphanum_mask_result, bg_mask, alphanum_mask
 
 if __name__ == "__main__":
