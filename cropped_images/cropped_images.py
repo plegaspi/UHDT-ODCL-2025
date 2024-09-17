@@ -13,15 +13,18 @@ from PIL import Image
 import string
 import random
 
-model_path = os.path.join("cropped_images","weights","nanotarget1.pt")
-base_dir = "cropped_images/datasets/pre-processed/3-8-24 DJI Images"
+model_path_base = os.path.join("cropped_images","weights")
+model_name = "yolov9s-obj.pt"
+model_suffix = os.path.splitext(model_name)[0]
+model_path = os.path.join(model_path_base, model_name)
+base_dir = os.path.join("cropped_images", "datasets", "pre-processed", "3-8-24 DJI Images")
 base_dir_name = os.path.split(base_dir)[1]
 padding = 10
 
 print(model_path)
 detection_model = AutoDetectionModel.from_pretrained(
     model_type='yolov8',
-    model_path=r"C:\Users\plegaspi\Documents\UHDT\UHDT-ODCL-2025\cropped_images\weights\nanotarget1.pt",
+    model_path=model_path,
     confidence_threshold=0.7,
     device="cuda:0"
 )
@@ -73,7 +76,7 @@ if padding:
                 adjusted_BB = adjust_bbox(BB, padding, img_width, img_height)
                 name, fext = os.path.splitext(f"{image}")
                 cropped = img.crop(adjusted_BB)
-                output_dir = os.path.join("cropped_images", "datasets", "processed", f"{base_dir_name}-{padding}")
+                output_dir = os.path.join("cropped_images", "datasets", "processed", f"{base_dir_name}-{padding}-{model_suffix}")
                 if not os.path.exists(output_dir):
                     os.mkdir(output_dir)
                 cropped.save(os.path.join(output_dir,f"{name}-cropped{count}.jpg"))
