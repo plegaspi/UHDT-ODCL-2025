@@ -14,7 +14,7 @@ import string
 import random
 
 model_path_base = os.path.join("cropped_images","weights")
-model_name = "yolov9s-obj.pt"
+model_name = "nanotarget1.pt"
 model_suffix = os.path.splitext(model_name)[0]
 model_path = os.path.join(model_path_base, model_name)
 base_dir = os.path.join("cropped_images", "datasets", "pre-processed", "3-8-24 DJI Images")
