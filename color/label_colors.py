@@ -160,8 +160,9 @@ def update_last_processed_file(csv_df, csv_file_path, last_file):
     csv_df['last_file_processed'] = last_file
     csv_df.to_csv(csv_file_path, index=False)
 
-# Test with multiple images and HSV values
+
 if __name__ == "__main__":
+    # Modify folder_path to the folder path of the images produced by cropped_images.py
     folder_path = os.path.join('cropped_images', 'datasets', 'processed', '3-8-24 DJI Images-10-yolov10s-obj')
 
     # Load or create the CSV file
@@ -188,7 +189,6 @@ if __name__ == "__main__":
 
         orig_img = img
         img, colors, bg_masked, alphanum_masked, bg_mask, alphanum_mask = classify_color(img)
-        #img = cv.cvtColor(img, cv.COLOR_LAB2BGR)
         print(colors)
 
         cv_images = [orig_img, img, bg_masked, alphanum_masked]

@@ -13,13 +13,15 @@ from PIL import Image
 import string
 import random
 
+# Modify base_dir to be the file path to the dataset
+base_dir = os.path.join("cropped_images", "datasets", "pre-processed", "3-8-24 DJI Images")
+# Modify padding to change the amount of padding (in px) around the cropped image of the target
+padding = 10
 model_path_base = os.path.join("cropped_images","weights")
 model_name = "nanotarget1.pt"
 model_suffix = os.path.splitext(model_name)[0]
 model_path = os.path.join(model_path_base, model_name)
-base_dir = os.path.join("cropped_images", "datasets", "pre-processed", "3-8-24 DJI Images")
 base_dir_name = os.path.split(base_dir)[1]
-padding = 10
 
 print(model_path)
 detection_model = AutoDetectionModel.from_pretrained(
