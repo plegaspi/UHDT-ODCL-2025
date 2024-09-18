@@ -10,8 +10,6 @@ from dotenv import load_dotenv
 import sys
 import cv2 as cv
 
-load_dotenv()
-
 
 
 def calculate_centroid(points):
@@ -249,9 +247,10 @@ def apply_motion_blur(image, direction='horizontal', blur_strength=15):
     return blurred_image
 
 if __name__ == "__main__":
-    num_of_images = 1000
+    load_dotenv()
+    num_of_images = 1000-142
     max_targets_per_image = 26
-    min_targets_per_image = 10
+    min_targets_per_image = 15
     max_cls_targets = 9000
     cls_targets_counter = 0
     min_angle = 0
@@ -261,15 +260,15 @@ if __name__ == "__main__":
     min_cls_padding = 0
     max_cls_padding = 20
     min_cls_blur_strength = 10
-    min_img_blur_strength = 100
+    min_img_blur_strength = 25
     max_cls_blur_strength = 23
     max_img_blur_strength = 110
-    erase_after_upload = False
+    erase_after_upload = True
     
     enable_mode = {
         'obj': True,
         'seg': True,
-        'cls': True
+        'cls': False
     }
     
     enable_roboflow = {
@@ -436,27 +435,29 @@ if __name__ == "__main__":
         blur_type = random.choice(['horizontal', 'vertical', 'diagonal', 'none'])
         if blur_type != "none":
             blur_strength = random.randint(min_img_blur_strength,max_img_blur_strength)
-            print(blur_strength)
             background_img = apply_motion_blur(background_img, blur_type, blur_strength)
         background_img.save(img_file_path)
-        if enable_roboflow['obj'] == True:
-            print(
-                obj_project.single_upload(
-                batch_name=batch_name,
-                image_path=img_file_path,
-                annotation_path=obj_label_file_path,
-                annotation_labelmap=annotation_map_file_path,
+        try:
+            if enable_roboflow['obj'] == True:
+                print(
+                    obj_project.single_upload(
+                    batch_name=batch_name,
+                    image_path=img_file_path,
+                    annotation_path=obj_label_file_path,
+                    annotation_labelmap=annotation_map_file_path,
+                    )
                 )
-            )
-        if enable_roboflow['seg'] == True:
-            print(
-                seg_project.single_upload(
-                batch_name=batch_name,
-                image_path=img_file_path,
-                annotation_path=seg_label_file_path,
-                annotation_labelmap=annotation_map_file_path,
+            if enable_roboflow['seg'] == True:
+                print(
+                    seg_project.single_upload(
+                    batch_name=batch_name,
+                    image_path=img_file_path,
+                    annotation_path=seg_label_file_path,
+                    annotation_labelmap=annotation_map_file_path,
+                    )
                 )
-            )        
+        except:
+            print("Error with uploading image. Skipping upload.")        
         if erase_after_upload:
             os.remove(img_file_path)
             os.remove(obj_label_file_path)
