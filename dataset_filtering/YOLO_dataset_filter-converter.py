@@ -3,6 +3,7 @@ import os
 folder_path = os.path.join("COCO Dataset.v34 test labels")
 #small-scale for a single annotation file only.
 
+#CHANGE THIS FOR DESIRED OBJECT
 object_of_interest = "person"
 #different datasets have different numbers for each classified object, this function finds it in the data files.
 def get_object_classnum(data_file_name):
@@ -26,10 +27,9 @@ def filter_list(file_name, object_class_num):
     bufferlist = [line for line in open(f'{file_name}') if object_class_num == int(line[0:2])]
     #print(bufferlist, len(bufferlist))
     namebuffer = file_name.split("\\")[1][0:12]
-    print(namebuffer)
-    #open(f'{namebuffer}_filtered_list','w').writelines(bufferlist)
-    open(f'filtered_list','a').writelines(bufferlist)
-    #open(f'filtered_list','w').writelines(f'{line}\n' for line in open(f'{file_name}') if len(line)>0)
+    #print(namebuffer)
+    open(f'{namebuffer}_filtered_list','w').writelines(bufferlist)
+    #open(f'filtered_list','a').writelines(bufferlist)
     #print(f'{object_class_num} ye')
     '''
     with open(f'{folder_path}_annotations_filtered.txt', 'w') as fx:
@@ -45,5 +45,7 @@ for file in os.listdir(folder_path):
     #print(os.path.join(folder_path, file))
     #print(file)
     filter_list(os.path.join(folder_path, file), object_class_num)
+
+#This should create a "xx_filtered" file for each file in the folder path specified (xx being the file name).
 
 #TODO!!! Need to set a folder to put theses outputs to
