@@ -1,7 +1,7 @@
 import os
 
+#CHANGE THIS TO FOLDER CONTAINING THE IMAGE ANNOTATIONS
 folder_path = os.path.join("COCO Dataset.v34 test labels")
-#small-scale for a single annotation file only.
 
 #CHANGE THIS FOR DESIRED OBJECT
 object_of_interest = "person"
