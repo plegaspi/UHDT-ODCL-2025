@@ -59,15 +59,15 @@ def translate_id_to_class(translated_class_id):
     object_class_list = ['person', 'car', 'motorcycle', 'airplane', 'bus', 'boat', 'stop_sign', 'snowboard', 'umbrella', 'sports_ball', 'baseball_bat', 'bed', 'tennis_racket', 'suitcase', 'skis']
     return object_class_list[translated_class_id]
 
-def get_image_path_from_label_path(label_path):
-    image_path = label_path.replace("labels", "images").replace(".txt", ".jpg")
+def get_image_path_from_label_path(label_path, dataset_img_ext=".jpy"):
+    image_path = label_path.replace("labels", "images").replace(".txt", dataset_img_ext)
     return image_path
 
 def filter_annotations(annotation_file_path, dataset_class_list, target_class_names, translated_class_names, dataset_img_ext=".jpg"):
     annotation_file_path = Path(annotation_file_path)
     dataset_subset_root = annotation_file_path.parent.parent
     annotation_obj = {
-        'img_path': get_image_path_from_label_path(str(annotation_file_path)),
+        'img_path': get_image_path_from_label_path(str(annotation_file_path), dataset_img_ext),
         'annotations': []
     }
     matching_annotations = []

@@ -3,26 +3,44 @@ import glob
 import os
 import PIL
 import random
-
+import sys
 from roboflow_utils import *
 from utils import *
 
-
+os.add_dll_directory(r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin")
 
 
 if __name__ == "__main__":
-    num_imgs = 5
+    num_imgs = 4000
     max_targets_per_img = 25
     min_targets_per_img = 10
     min_angle = 0
     max_angle = 360
-    min_scale = 0.5
-    max_scale = 1.5
-    min_blur_strength = 10
-    max_blur_strength = 110
-    roboflow_upload_enabled = True
+    min_scale = 1.3
+    max_scale = 2
+    #min_blur_strength = 10
+    #max_blur_strength = 110
+    roboflow_upload_enabled = False
     erase_after_upload = False
-    object_dataset_path = "extract_objects\datasets"
+    object_dataset_path = "extract_objects/filtered_datasets"
+
+    obj_scale_config = {
+        'person': 0.75,
+        'car': 1,
+        'motorcycle': 1,
+        'airplane': 2, 
+        'bus': 2, 
+        'boat': 1, 
+        'stop_sign': 0.35, 
+        'snowboard': 0.5,
+        'umbrella': 0.5, 
+        'sports_ball': 0.25, 
+        'baseball_bat': 0.4, 
+        'bed': 1, 
+        'tennis_racket': 0.5, 
+        'suitcase': 0.5, 
+        'skis': 0.5
+    }
 
     current_date = datetime.now()
     batch_name = f"{current_date.year}_{current_date.month}_{current_date.day}_{current_date.hour}_{current_date.minute}_{current_date.second}"
@@ -56,6 +74,7 @@ if __name__ == "__main__":
         targets = []
         class_ids = []
         print(f"Generating image #{i+1}/{num_imgs}")
+        scale_factor = random.uniform(min_scale, max_scale)
         for j in range(num_targets_in_img):
             print(f"\tGenerating target {j+1}/{num_targets_in_img}")
             target_class = select_random_target()
@@ -63,8 +82,9 @@ if __name__ == "__main__":
             target_imgs = glob.glob(f"{object_dataset_path}/{target_class}/*.png")
             target_img_path = target_imgs[random.randint(0, len(target_imgs) - 1)]
             target_img = Image.open(target_img_path)
-            scale_factor = random.uniform(min_scale, max_scale)
-            target_img = scale_target(target_img, scale_factor)
+            #scale_factor = random.uniform(min_scale, max_scale)
+            #target_img = scale_target(target_img, background_img, target_class, scale_factor)
+            target_img = scale_target(target_img, background_img, target_class, obj_scale_config, scale_factor=1.0, sr_model_path="yolo_v2\EDSR_x4.pb", min_res=(500, 500))
             angle = random.randint(min_angle, max_angle)
             target_img = rotate_target(target_img, angle)
             targets.append(target_img)
@@ -76,6 +96,12 @@ if __name__ == "__main__":
         write_annotations(obj_label_file_path, annotations)
 
         if roboflow_upload_enabled:
-            print(upload_to_roboflow(rf_project, batch_name, dataset_img_path, obj_label_file_path, annotation_map_file_path))
+            try:
+                print(upload_to_roboflow(rf_project, batch_name, dataset_img_path, obj_label_file_path, annotation_map_file_path))
+            except:
+                print("Skipping image upload.")
+            if erase_after_upload:
+                os.remove(dataset_img_path)
+                os.remove(obj_label_file_path)
 
 
