@@ -312,7 +312,7 @@ def load_camera_settings(camera_config_file):
 
 
 def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, debug=False):
-    has_unique_targets = False
+    has_unique_targets = 0
     logging.info(f"Running ODCL for {source_destination_path}")
     start_time = time.time()
     results = Object_Detection(img, detection_model, sahi_config)
@@ -356,12 +356,15 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
             logging.info(f"Saved cropped target to {cropped_path}")
             target = Target(predicted_classes, confidence_scores, target_latitude, target_longitude)
             target_list.append(target)
-            has_unique_targets = True
+            has_unique_targets += 1
             print(f"During loop: {len(target_list)}")
 
     end_time = time.time() - start_time
     logging.info(f"Completed ODCL for {source_destination_path}. Elapsed Time: {end_time}")
-
+    if has_unique_targets > 0 :
+        for i in has_unique_targets:
+            results.export_visuals(file_name=f"{os.path.splitext(os.path.split(img_path)[1])[0]}{i}", export_dir=annotated_detections_dir)
+            annotated_logger.info(f"Saved annotated image to {annotated_detections_dir}")
     return 0
 
 if __name__ == "__main__":
