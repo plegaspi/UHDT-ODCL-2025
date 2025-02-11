@@ -10,7 +10,7 @@ valid_targets: [
 ]
 logging: true
 runtime_history_dir: "runtime"
-watch_directory: "test/dest"#"/home/uhdt/UAV_software/Autonomous/watchdog"
+watch_directory: "synthetic_images/dest"#"/home/uhdt/UAV_software/Autonomous/watchdog"
 waypoint_file_path: "waypoints.txt"
 airdrop_mode:
   flight_testing:

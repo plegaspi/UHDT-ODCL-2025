@@ -362,7 +362,7 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
     end_time = time.time() - start_time
     logging.info(f"Completed ODCL for {source_destination_path}. Elapsed Time: {end_time}")
     if has_unique_targets > 0 :
-        for i in has_unique_targets:
+        for i in range(has_unique_targets):
             results.export_visuals(file_name=f"{os.path.splitext(os.path.split(img_path)[1])[0]}{i}", export_dir=annotated_detections_dir)
             annotated_logger.info(f"Saved annotated image to {annotated_detections_dir}")
     return 0
