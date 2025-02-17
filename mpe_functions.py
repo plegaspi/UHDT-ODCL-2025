@@ -79,18 +79,19 @@ def get_NoD_class(file_name, class_num):
     return num_class_targets
 
 #While there is chat's way to get the usual metrics, this function will try to get an accuracy for individual classes.
-def compare_classes(model,class_type, true_file_name, detected_file_name):
+#ON SECOND THOUGHT, THIS FUNCTION MAY BE REDUNDANT. SINCE get_NoD_class EXISTS, A SEPARATE LOOP MAY BE ABLE TO DO THE JOB
+def compare_classes(model, class_type, true_class_nums, detected_class_nums):
     '''
     The plan is to loop through each line of a YOLO file + some ground truth file and compare the classes overall.
     By overall, this means that it won't really keep track of the individual targets but rather just number of detected targets and targets that exist.
-    You will need some type of read() function to open text files.
-    From there, we can tally up things and output some numbers
-    '''
-    detections = 0
-    positive_detects = 0
 
-    true_classes = []
-    detected_classes = []
+    true_class_nums refers to the actual number of targets that are the desired class
+    detected_class_nums refers to the detected number of targets that are the desired class
+    These can be (ideally) obtained using get_NoD_general.
+    '''
+
+    true_total = true_class_nums
+    detected_total = 0
     
     for i in range(len(true_classes)):
         if (true_classes[i]==detected_classes[i]):
