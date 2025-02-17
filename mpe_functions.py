@@ -1,3 +1,5 @@
+import os
+
 def yolo_to_xyxy(box, img_w, img_h):
     """
     Converts YOLO format (center_x, center_y, width, height) to (x1, y1, x2, y2).
@@ -50,17 +52,19 @@ def calculate_iou_yolo(box1, box2, image_width, image_height):
 
     return intersection_area / union_area if union_area > 0 else 0
 
-def get_NoD_general(file_name):
+def get_NoD_general(folder_name): 
     '''
-    The plan is to loop through each line of a YOLO label file and get the number of targets, either detected or truth
+    The plan is to loop through each line of a YOLO label folder and get the number of targets, either detected or truth
     Ideally, each line should mean one target.
     This won't account for mistake detections so more math will have to be done.
     '''
     num_targets = 0
-    with open(file_name) as true_file:
-        for line in true_file:
-            if type(int(line[0])) == int:
-                num_targets +=1 #for every line in the "truth file", that should be one target
+    for file in os.listdir(folder_name):
+    # Open file
+        with open(os.path.join(folder_name, file)) as f:
+            for line in f:
+                if int(line[0]) == int:
+                    num_targets +=1 
 
     return num_targets
 
