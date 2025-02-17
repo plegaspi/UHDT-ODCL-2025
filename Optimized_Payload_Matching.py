@@ -7,7 +7,8 @@ def Optimized_Payload_Matching(targets, target_list):
     # Validate that the number of payloads to be dropped across all four targets is no greater than the number of targets set in Config
     matched_payloads = []
     for target in target_list:
-        matched_payloads.append(Target)
+        target.num_payloads = 1
+        matched_payloads.append(target)
     return matched_payloads
 
 def create_waypoint_file(targets, waypoint_file_path):

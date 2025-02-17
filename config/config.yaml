@@ -2,7 +2,7 @@ mode: "flight_testing"
 debug: true
 targets: ["bus", "car", "person", "ski"]
 number_of_targets: 4
-num_photos: 4
+num_photos: 28
 valid_targets: [
   "person", "car", "motorcycle", "airplane", "bus", "bus", 
   "boat", "stop_sign", "snowboard", "umbrella", "sports_ball", 
@@ -10,14 +10,15 @@ valid_targets: [
 ]
 logging: true
 runtime_history_dir: "runtime"
-watch_directory: "synthetic_images/dest"#"/home/uhdt/UAV_software/Autonomous/watchdog"
+runtime_folder_override: "odcl_demo"
+watch_directory: "synthetic_images/dest"
 waypoint_file_path: "waypoints.txt"
 airdrop_mode:
   flight_testing:
-    option_1: [99,99]
-    option_2: [99,99]
-    option_3: [99,99]
-    option_4: [99,99]
+    option_1: [21.40096,-157.76345]
+    option_2: [21.40096,-157.76495]
+    option_3: [21.40024,-157.76345]
+    option_4: [21.40024, -157.76495]
   competition:
     option_1: [99,99]
     option_2: [99,99]
@@ -25,13 +26,11 @@ airdrop_mode:
     option_4: [99,99]
 camera:
   load_config: false
-  config: "bruh"
-  exposure: 50
-  shutter_speed: 8000
+  config: "camera-config.json"
 object_detection:
-  model: "weight/v10.pt"
+  model: "weight/v9.pt"
   model_type: 'yolov8'
-  confidence_threshold: 0.5
+  confidence_threshold: 0.25
   device: "cuda:0"
   sahi:
     slice: false
@@ -42,5 +41,6 @@ object_detection:
     perform_standard_pred: false
     postprocess_match_metric: "IOU"
     postprocess_match_threshold: 0.3
-
+georeferencing:
+  duplicate_threshold: 3
 

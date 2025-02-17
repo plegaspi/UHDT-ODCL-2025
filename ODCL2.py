@@ -75,7 +75,12 @@ from datetime import datetime
 # Logging and History #
 #######################
 runtime_history_dir = config.params["runtime_history_dir"]
-runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_flight_testing")
+if config.params["runtime_folder_override"] != "":
+    runtime_dir = os.path.join(config.params["runtime_folder_override"])
+    if os.path.exists(config.params["runtime_folder_override"]):
+        shutil.rmtree(config.params["runtime_folder_override"])
+else:
+    runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_flight_testing")
 log_files_dir = os.path.join(runtime_dir, "logs")
 
 runtime_log_path = os.path.join(log_files_dir, "runtime.log")
@@ -243,6 +248,7 @@ def watch_directory():
     timeout_duration = 30  
 
     logging.info("File Watcher Initiated")  
+    logging.info(f"Watching {watch_dir_path}")
 
     while len(target_list) < len(targets) and num_photos_processed < num_photos and not timeout:
         for file_name in os.listdir(watch_dir_path):
@@ -284,7 +290,8 @@ def watch_directory():
     if len(target_list) >= len(targets) or num_photos_processed >= num_photos or timeout:
         waypoints = Optimized_Payload_Matching(targets, target_list)
         create_waypoint_file(target_list, waypoint_file_path)
-        logging.info(f"Wrote waypoint file for {len(target_list)} at {waypoint_file_path}")
+        create_waypoint_file(target_list, runtime_dir)
+        logging.info(f"Wrote waypoint file for {len(target_list)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
 
 def initialize(runtime_type):
     logging.info("Initializing system...")
@@ -363,8 +370,8 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
     logging.info(f"Completed ODCL for {source_destination_path}. Elapsed Time: {end_time}")
     if has_unique_targets > 0 :
         for i in range(has_unique_targets):
-            results.export_visuals(file_name=f"{os.path.splitext(os.path.split(img_path)[1])[0]}{i}", export_dir=annotated_detections_dir)
-            annotated_logger.info(f"Saved annotated image to {annotated_detections_dir}")
+            results.export_visuals(file_name=f"{os.path.splitext(os.path.split(img_path)[1])[0]}-{i}", export_dir=contains_unique_targets_dir)
+            annotated_logger.info(f"Saved annotated image to {contains_unique_targets_dir}")
     return 0
 
 if __name__ == "__main__":
