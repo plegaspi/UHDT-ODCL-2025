@@ -9,22 +9,17 @@ directory = "test_sample_folder" #this directory should be holding the annotatio
 # Raw YOLO Data
 # [classification, confidence_score, bounding_box] 
 
+total_targets = mpe.get_NoD_general(directory)
+num_targets = {}
+
 # Iterate over files in directory
 for file in os.listdir(directory):
     # Open file
     with open(os.path.join(directory, file)) as f:
+        for line in f:
+            num_targets[object_classes[int(line[0])]] = num_targets.get(object_classes[int(line[0])], 0) + 1
 
-        #print(f"Content of '{f.name}'")
-        # Read content of file
-        #print(f.read())
-        print(f'the # of {object_classes[0]} for {f.name} is {mpe.get_NoD_class(f.name,0)}')
-        object_person = 0 
-        object_motorcylce=0
 
-        if(object_classes == "person" ):
-            object_person+=1
-        elif (object_classes == "motorcycle" ):
-            object_motorcylce+=1
 
 # Parameters
 # Folder directory with annotations and images
