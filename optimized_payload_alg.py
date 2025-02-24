@@ -1,13 +1,111 @@
-# create a optimized payload matching algortihm 
 
-# take the provided classes (this will be random? also not sure how it will be given
-target_classes = ["sports_ball", "bus", "mattress", "motorcycle"]
+def opt_payload(targets, target_list):
+    
+    det_target =[]
+    # getting target name only 
+    for d in range(len(target_list)):
+        det_target.append(target_list[d])
 
-# taking in a list of objects and number of how accurate it matches with every object need to correctly identify them
-# not sure how data will be given just making it simple
-target_ratio_list = [['target1',0.8,0.7,0.6, 0.4,], ['target2',0.9,0.4,0.5,0.7], ["target3",0.6,0.2,0.3,0.2], ["target4", 0.7,0.2,0.23,0.45]]
-# target_ratio_list = [['target1',0.8,0.7,0.6, 0.4,]]
-# targets 
+    payload = [0,0,0,0]
+    #case 1 only 1 detection found 
+    # drop all payloads onto detected target 
+    if len(target_list)== 1:
+        for i in range(4):
+            if targets[i] == target_list[0][0]:
+                payload[i] = 4
+            else: 
+                #no right detections drop payload at any target
+                pass
+        return  payload, det_target
+    
+    # case 2 only 2 detections found 
+    if len(target_list) == 2:
+        a=0
+        while a<2:
+            for i in range(4):
+                if targets[i] == target_list[a][0]:
+                    payload[i] = 2
+                else: 
+                    #no right detections drop payload at any target
+                    pass 
+            a+=1
+        return payload,det_target
+    else:
+        pass
+    
+    # case 3 only 3 detections found
+    if len(target_list) == 3:
+        a=0
+        while a<3:
+            for i in range(4):
+                if targets[i] == target_list[a][0]:
+                    payload[i] = 1
+            else: 
+                #no right detections drop payload at any target
+                pass 
+            a+=1
+        return payload, det_target
+    else:
+        pass
+
+    # case 4 4 detections found payload drop at each detection
+    if len(target_list) == 4:
+        a =0
+        while a<4:
+            for i in range(4):
+                if targets[i] == target_list[a][0]:
+                    if payload == 0:
+                        payload[i] = 1
+                    else:
+                        pass
+
+                else: 
+                    pass 
+                #no right detections drop payload at any target
+                pass 
+            a+=1
+        return payload ,det_target
+
+
+if __name__ == "__main__":
+    targets = ['bus', 'airplane', 'umbrella', 'car']
+    target_list = [['umbrella', 0.5], ['car', 0.8]]
+    payload , det_target= opt_payload(targets, target_list)
+    print(payload, det_target)
+    
+
+# determine how we want to distribute the payloads for case 2 and 3
+#  find out about misclassifications
+# find about confidence values
+# general coordinates will be given that are not
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
 matched_target_list = []
 
 safe_keep =[]
@@ -60,7 +158,6 @@ if len(target_ratio_list) ==1:
 else:
     pass
 
-
 # if 4 detected payload 
 if len(matched_target_list) == 4:
     # if there were multiple detected of the same target 
@@ -96,20 +193,42 @@ if len(matched_target_list) == 4:
                     pass
         # remove confidence value from input list and general targets
         target_classes.pop(safe_keep[0].index(conf_val[0])-1)
-      
+        for k in range(len(safe_keep)):
+            safe_keep[k].remove(conf_val[k])
         
+        # repeat process from the beginning
+        matched_target_list =[]
+        while len(safe_keep)>0:
+
+            pred_1 = [safe_keep[0][1], target_classes[0]]
+            pred_2 = [safe_keep[0][2], target_classes[1]]
+            pred_3 = [safe_keep[0][3], target_classes[2]]
+        
+            matched_target = pred_1
+            #compare with each object and find the highest ratio number
+
+            if matched_target[0] < pred_1[0]:
+                matched_target =pred_1
+            else: 
+                pass
+            if matched_target[0] < pred_2[0]:
+                matched_target =pred_2
+            else:
+                pass
+            if matched_target[0] < pred_3[0]:
+                matched_target =pred_3
+            else:
+                pass
+            #put in list of correctly matched targets
+            matched_target_list.append(matched_target)
+            #remove the target and go to the next one
+            safe_keep.pop(0)
+            
     else:
-        #all payloads match ?
-        payload_target_1 = matched_target_list[0][1]
-        num_1 = 1
-        payload_target_2 = matched_target_list[1][1]
-        num_2 = 1
-        payload_target_3 = matched_target_list[2][1]
-        num_3 = 1
-        payload_target_4 = matched_target_list[3][1]
-        num_4 = 1
+        #all payloads match output [1, 1, 1, 1]
+        pass
 else:
     pass
 
-#print(same_target)
-#print(safe_keep)
+
+'''
