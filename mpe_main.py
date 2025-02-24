@@ -37,16 +37,23 @@
 #    basket_ball:dog, car:bus
 # 5. Store the results (the metric calculations) and output all metrics at the end.
 
+from Object_Detection import Object_Detection
 import os
 import mpe_functions as mpe
 object_classes = ["person", "motorcycle", "car", "airplane", "bus", "boat", "stop_sign", "snowboard", "umbrella", "sports_ball", "baseball_bat", "bed", "tennis_racket", "suitcase"]
 
 labels_directory = "test_sample_folder" #this directory should be holding the annotation txt files.
 image_directory = "test_image_folder"
+detect_model = "Yolo_model_something"
+config = "placeholder"
+#{
+# slice_height: 600,
+#  overlap_height_ratio: 60
+# }
 # data = panda csv (for raw data)
 
 # Raw YOLO Data
-# [classification, confidence_score, bounding_box] 
+# [classification, confidence_score, bounding_box] probably what the "results" variable is gonna hold. IF not, can adjust it to do so or something.
 
 total_targets = mpe.get_NoD_general(labels_directory)
 num_targets = {}
@@ -61,8 +68,12 @@ for file in os.listdir(labels_directory):
 
 #YOLO-ing
 for image_file in os.listdir(image_directory):
-    #check for photos (i.e. jpg and jpegs)
+    #check for photos (i.e. jpg and jpegs) and get the path to image
     if image_file.lower().endswith((".jpg", ".jpeg", ".png")):
         image_path = os.path.join(image_directory, image_file)
+        annotation_path = os.path.join(labels_directory, image_file.replace(".jpg", ".txt").replace(".png", ".txt")) # get the annotation file for the photo (should eb same name as image)
+
+        results = Object_Detection(image_path,detect_model,config) #use obejct detection script that was already made #TODO should there be a default config???
+        
 
 
