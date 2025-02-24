@@ -14,9 +14,11 @@
 # - Commonly confused classifications (can be a list of classifications)
 
 
+# c = done, p = in progress, no label = haven't touched
+
 # Initialization
 # 1. Loop through annotations, get the overall total number of desired targets (ideally one line = one target) c
-# 2. (May be in parallel with step 1) Loop through annotations, get the total number of targets for each class c
+# 2. (May be in parallel with step 1) Loop through annotations, get the total number of targets for each class p
 
 # Loop Info
 # 1. Get all images and annotations in folder directory (os.listdir or glob)
@@ -61,8 +63,8 @@ detection_data = {obj: {"detected":0, "actual":0, "true positive":0, "false posi
 
 total_targets = mpe.get_NoD_general(labels_directory) if os.path.exists(labels_directory) else 0 #get total total number of actual targets
 
-#YOLO-ing - loop through the photos
-for image_file in os.listdir(image_directory):
+#YOLO-ing - loop through the photos 
+for image_file in os.listdir(image_directory): # i.e. image_file = dillonbigyeah.jpg
     #look for image files (i.e. jpg and jpegs) and get the path to image
     if image_file.lower().endswith((".jpg", ".jpeg", ".png")):
         image_path = os.path.join(image_directory, image_file)
@@ -71,15 +73,34 @@ for image_file in os.listdir(image_directory):
         yolo_results = Object_Detection(image_path,detect_model,config) #use obejct detection script that was already made #TODO should there be a default config???
         #detected_classes = [int(result[0]) for result in yolo_results] # not sure if results will be a single result or a collection of results
         
-        #while looping, get the gorund truth data of the corresponding image/phot
+        #while looping, get the gorund truth data of the corresponding image/photo
         ground_truth = []
         image_w, image_h = 1280, 720  # FILLER --> replace with actual image dimensions if available
         if os.path.exists(annotation_path):
             with open(annotation_path, "r") as f:
                 for line in f:
-                    values = line.split()
+                    values = line.split() #turn the numbers on each line into an array
                     class_id = int(values[0])
-                    bbox = list(map(float, values[1:]))  
+                    bbox = tuple(map(float, values[1:]))  # turn bounding box values (cx cy h w) into a list, MAY BE ISSUE SINCE yolo_yo_xyxy might only take tuple #TODO consider fix
                     xyxy_bbox = mpe.yolo_to_xyxy(bbox, image_w, image_h)  
-                    ground_truth.append({"class_id": class_id, "bbox": xyxy_bbox, "matched": False})
+                    ground_truth.append({"class_id": class_id, "bbox": xyxy_bbox, "matched": False}) #bbox are xy coords of box
                     detection_data[object_classes[class_id]]["actual"] += 1  # Update per-class count
+
+        for detection in yolo_results:
+            detected_class = int(detection[0]) #get class id from the result
+            bbox = mpe.yolo_to_xyxy(detection[2],image_w,image_h) #get the bounding box in terms of x and y corner coords
+
+            #holders that will be updated as the image is compared to each annotation/annotated target
+            best_match = None
+            best_iou = 0
+
+            #compare image with each annotation
+            for annotation in ground_truth:
+                iou_score = mpe.calculate_iou_yolo(bbox,annotation["bbox"], image_w , image_h)
+                if iou_score > best_iou and iou_score >= IoU_thresh:
+                    best_iou = iou_score #update best iou score
+                    best_match = annotation # where annotation is a dictionary representing a line in the annotation file 
+            
+            #assign image to annotation if a valid match
+            if best_match and not best_match["matched"]:
+                
