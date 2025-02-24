@@ -46,6 +46,8 @@ labels_directory = "test_sample_folder" #this directory should be holding the an
 image_directory = "test_image_folder"
 detect_model = "Yolo_model_something"
 config = "placeholder"
+
+IoU_thresh = 0.5
 #{
 # slice_height: 600,
 #  overlap_height_ratio: 60
@@ -55,25 +57,29 @@ config = "placeholder"
 # Raw YOLO Data
 # [classification, confidence_score, bounding_box] probably what the "results" variable is gonna hold. IF not, can adjust it to do so or something.
 
-total_targets = mpe.get_NoD_general(labels_directory)
-num_targets = {}
+detection_data = {obj: {"detected":0, "actual":0, "true positive":0, "false positive":0, "missed": 0} for obj in object_classes} #dictionary to hold data fro each obejct
 
-#INITIALIZATION
-# Iterate over files in directory
-for file in os.listdir(labels_directory):
-    # Open file
-    with open(os.path.join(labels_directory, file)) as f:
-        for line in f:
-            num_targets[object_classes[int(line[0])]] = num_targets.get(object_classes[int(line[0])], 0) + 1
+total_targets = mpe.get_NoD_general(labels_directory) if os.path.exists(labels_directory) else 0 #get total total number of actual targets
 
-#YOLO-ing
+#YOLO-ing - loop through the photos
 for image_file in os.listdir(image_directory):
-    #check for photos (i.e. jpg and jpegs) and get the path to image
+    #look for image files (i.e. jpg and jpegs) and get the path to image
     if image_file.lower().endswith((".jpg", ".jpeg", ".png")):
         image_path = os.path.join(image_directory, image_file)
         annotation_path = os.path.join(labels_directory, image_file.replace(".jpg", ".txt").replace(".png", ".txt")) # get the annotation file for the photo (should eb same name as image)
 
-        results = Object_Detection(image_path,detect_model,config) #use obejct detection script that was already made #TODO should there be a default config???
+        yolo_results = Object_Detection(image_path,detect_model,config) #use obejct detection script that was already made #TODO should there be a default config???
+        #detected_classes = [int(result[0]) for result in yolo_results] # not sure if results will be a single result or a collection of results
         
-
-
+        #while looping, get the gorund truth data of the corresponding image/phot
+        ground_truth = []
+        image_w, image_h = 1280, 720  # FILLER --> replace with actual image dimensions if available
+        if os.path.exists(annotation_path):
+            with open(annotation_path, "r") as f:
+                for line in f:
+                    values = line.split()
+                    class_id = int(values[0])
+                    bbox = list(map(float, values[1:]))  
+                    xyxy_bbox = mpe.yolo_to_xyxy(bbox, image_w, image_h)  
+                    ground_truth.append({"class_id": class_id, "bbox": xyxy_bbox, "matched": False})
+                    detection_data[object_classes[class_id]]["actual"] += 1  # Update per-class count
