@@ -1,26 +1,3 @@
-import os
-import mpe_functions as mpe
-object_classes = ["person", "motorcycle", "car", "airplane", "bus", "boat", "stop_sign", "snowboard", "umbrella", "sports_ball", "baseball_bat", "bed", "tennis_racket", "suitcase"]
-
-directory = "test_sample_folder" #this directory should be holding the annotation txt files.
-
-# data = panda csv (for raw data)
-
-# Raw YOLO Data
-# [classification, confidence_score, bounding_box] 
-
-total_targets = mpe.get_NoD_general(directory)
-num_targets = {}
-
-# Iterate over files in directory
-for file in os.listdir(directory):
-    # Open file
-    with open(os.path.join(directory, file)) as f:
-        for line in f:
-            num_targets[object_classes[int(line[0])]] = num_targets.get(object_classes[int(line[0])], 0) + 1
-
-
-
 # Parameters
 # Folder directory with annotations and images
 # Path to yolo model of interest
@@ -38,8 +15,8 @@ for file in os.listdir(directory):
 
 
 # Initialization
-# 1. Loop through annotations, get the overall total number of desired targets (ideally one line = one target)
-# 2. (May be in parallel with step 1) Loop through annotations, get the total number of targets for each class
+# 1. Loop through annotations, get the overall total number of desired targets (ideally one line = one target) c
+# 2. (May be in parallel with step 1) Loop through annotations, get the total number of targets for each class c
 
 # Loop Info
 # 1. Get all images and annotations in folder directory (os.listdir or glob)
@@ -59,4 +36,33 @@ for file in os.listdir(directory):
 #    Misclassifications
 #    basket_ball:dog, car:bus
 # 5. Store the results (the metric calculations) and output all metrics at the end.
+
+import os
+import mpe_functions as mpe
+object_classes = ["person", "motorcycle", "car", "airplane", "bus", "boat", "stop_sign", "snowboard", "umbrella", "sports_ball", "baseball_bat", "bed", "tennis_racket", "suitcase"]
+
+labels_directory = "test_sample_folder" #this directory should be holding the annotation txt files.
+image_directory = "test_image_folder"
+# data = panda csv (for raw data)
+
+# Raw YOLO Data
+# [classification, confidence_score, bounding_box] 
+
+total_targets = mpe.get_NoD_general(labels_directory)
+num_targets = {}
+
+#INITIALIZATION
+# Iterate over files in directory
+for file in os.listdir(labels_directory):
+    # Open file
+    with open(os.path.join(labels_directory, file)) as f:
+        for line in f:
+            num_targets[object_classes[int(line[0])]] = num_targets.get(object_classes[int(line[0])], 0) + 1
+
+#YOLO-ing
+for image_file in os.listdir(image_directory):
+    #check for photos (i.e. jpg and jpegs)
+    if image_file.lower().endswith((".jpg", ".jpeg", ".png")):
+        image_path = os.path.join(image_directory, image_file)
+
 
