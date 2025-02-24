@@ -68,16 +68,16 @@ for image_file in os.listdir(image_directory): # i.e. image_file = dillonbigyeah
     #look for image files (i.e. jpg and jpegs) and get the path to image
     if image_file.lower().endswith((".jpg", ".jpeg", ".png")):
         image_path = os.path.join(image_directory, image_file)
-        annotation_path = os.path.join(labels_directory, image_file.replace(".jpg", ".txt").replace(".png", ".txt")) # get the annotation file for the photo (should eb same name as image)
+        annotation_file_path = os.path.join(labels_directory, image_file.replace(".jpg", ".txt").replace(".png", ".txt")) # get the annotation file for the photo (should eb same name as image)
 
-        yolo_results = Object_Detection(image_path,detect_model,config) #use obejct detection script that was already made #TODO should there be a default config???
+        yolo_results = Object_Detection(image_path,detect_model,config) #[classification, confidence_score, bounding_box], use obejct detection script that was already made #TODO should there be a default config???
         #detected_classes = [int(result[0]) for result in yolo_results] # not sure if results will be a single result or a collection of results
         
         #while looping, get the gorund truth data of the corresponding image/photo
         ground_truth = []
         image_w, image_h = 1280, 720  # FILLER --> replace with actual image dimensions if available
-        if os.path.exists(annotation_path):
-            with open(annotation_path, "r") as f:
+        if os.path.exists(annotation_file_path):
+            with open(annotation_file_path, "r") as f:
                 for line in f:
                     values = line.split() #turn the numbers on each line into an array
                     class_id = int(values[0])
@@ -86,7 +86,7 @@ for image_file in os.listdir(image_directory): # i.e. image_file = dillonbigyeah
                     ground_truth.append({"class_id": class_id, "bbox": xyxy_bbox, "matched": False}) #bbox are xy coords of box
                     detection_data[object_classes[class_id]]["actual"] += 1  # Update per-class count
 
-        for detection in yolo_results:
+        for detection in yolo_results: #collection of targets, so far each target:
             detected_class = int(detection[0]) #get class id from the result
             bbox = mpe.yolo_to_xyxy(detection[2],image_w,image_h) #get the bounding box in terms of x and y corner coords
 
@@ -103,4 +103,16 @@ for image_file in os.listdir(image_directory): # i.e. image_file = dillonbigyeah
             
             #assign image to annotation if a valid match
             if best_match and not best_match["matched"]:
-                
+                best_match["matched"] = True
+                if detected_class == best_match["class_id"]:
+                    detection_data[object_classes[detected_class]]["true positive"] += 1
+                else:
+                    detection_data[object_classes[detected_class]]["false positive"] += 1
+            else:
+                detection_data[object_classes[detected_class]]["false positive"] += 1
+
+        for annotation in ground_truth:
+            if not annotation["matched"]:
+                detection_data[object_classes[annotation["class_id"]]]["missed"] += 1
+
+#do the math stuff and store in data dictionary
