@@ -21,23 +21,23 @@
 # 2. (May be in parallel with step 1) Loop through annotations, get the total number of targets for each class p
 
 # Loop Info
-# 1. Get all images and annotations in folder directory (os.listdir or glob)
-# 2. Loop through images (every image)
-#    - Run against YOLO
-#    - Compare results against annotation file (annotation file has the same name as image but ends in txt)\
-# 3. Output into console and as csv files
+# 1. Get all images and annotations in folder directory (os.listdir or glob) c
+# 2. Loop through images (every image) c
+#    - Run against YOLO c
+#    - Compare results against annotation file (annotation file has the same name as image but ends in txt) c
+# 3. Output into console and as csv files p
 
 # Loop Steps/Calculations (BIG DOG)
-# 3. Compare the outputs of the yolo model with the annotations ---> How to determine which ideal target gets compared to detected target???
-#    - Get the IOU scores of the bounding boxes
-#    - Given a certain IOU threshold, if the detected target class matches the desired target class add to a counter of true positives. 
+# 3. Compare the outputs of the yolo model with the annotations ---> How to determine which ideal target gets compared to detected target??? 
+#    - Get the IOU scores of the bounding boxes c
+#    - Given a certain IOU threshold, if the detected target class matches the desired target class add to a counter of true positives. c
 #       If detected target has matching bounding boxes with incorrect classification
 #       add to false positives. If # of detected targets < # of desired targets, take 
 #       difference and use as missed detections. Do other math for metrics (i.e. precision, recall, mAP)
-# 4. Figure out way to quanitfy commonly confused classifications and store results.
+# 4. Figure out way to quanitfy commonly confused classifications and store results. p
 #    Misclassifications
 #    basket_ball:dog, car:bus
-# 5. Store the results (the metric calculations) and output all metrics at the end.
+# 5. Store the results (the metric calculations) and output all metrics at the end. p
 
 from Object_Detection import Object_Detection
 import os
@@ -116,3 +116,10 @@ for image_file in os.listdir(image_directory): # i.e. image_file = dillonbigyeah
                 detection_data[object_classes[annotation["class_id"]]]["missed"] += 1
 
 #do the math stuff and store in data dictionary
+for class_name in object_classes:
+    #extract the number of true positives, false positives, and missed detections for each object class
+    TP = object_classes[class_name]["true positive"]
+    FP = object_classes[class_name]["false positive"]
+    MI = object_classes[class_name]["missed"]
+
+    mpe.calculate_metrics(TP,FP,MI)
