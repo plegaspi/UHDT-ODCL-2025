@@ -42,12 +42,15 @@
 from Object_Detection import Object_Detection
 import os
 import mpe_functions as mpe
+import pandas as pd
 object_classes = ["person", "motorcycle", "car", "airplane", "bus", "boat", "stop_sign", "snowboard", "umbrella", "sports_ball", "baseball_bat", "bed", "tennis_racket", "suitcase"]
 
 labels_directory = "test_sample_folder" #this directory should be holding the annotation txt files.
 image_directory = "test_image_folder"
 detect_model = "Yolo_model_something"
 config = "placeholder"
+
+output_csv = f"{detect_model}_model_results.csv"
 
 IoU_thresh = 0.5
 #{
@@ -59,7 +62,7 @@ IoU_thresh = 0.5
 # Raw YOLO Data
 # [classification, confidence_score, bounding_box] probably what the "results" variable is gonna hold. IF not, can adjust it to do so or something.
 
-detection_data = {obj: {"detected":0, "actual":0, "true positive":0, "false positive":0, "missed": 0} for obj in object_classes} #dictionary to hold data fro each obejct
+detection_data = {obj: {"detected":0, "actual":0, "true positive":0, "false positive":0, "missed": 0, "precision": 0, "recall":0, "accuracy":0} for obj in object_classes} #dictionary to hold data fro each obejct
 
 total_targets = mpe.get_NoD_general(labels_directory) if os.path.exists(labels_directory) else 0 #get total total number of actual targets
 
@@ -122,4 +125,14 @@ for class_name in object_classes:
     FP = object_classes[class_name]["false positive"]
     MI = object_classes[class_name]["missed"]
 
-    mpe.calculate_metrics(TP,FP,MI)
+    metrics = mpe.calculate_metrics(TP,FP,MI) #this retruns a dictionary with precision, recall, and missed detects
+
+    #store the calculated metrics into data dictionary
+    detection_data[class_name]["precision"] = metrics["precision"]
+    detection_data[class_name]["recall"] = metrics["recall"]
+    detection_data[class_name]["accuracy"] = metrics["accuracy"]
+
+
+#output the dictionary as csv using pandas
+df = pd.DataFrame.from_dict(detection_data, orient="index")
+df.to_csv(output_csv, index=True)
