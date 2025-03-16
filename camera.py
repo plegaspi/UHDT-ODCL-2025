@@ -6,6 +6,17 @@ import csv
 import os
 from datetime import datetime
 
+''' Template
+"<name>":  {"iso"                 : <value>,
+            "whitebalance"        : <value>,
+            "exposurecompensation": <value>,
+            "f-number"            : <value>,
+            "shutterspeed"        : <value>,
+            "d01c"                : <value>, # Noise Reduction
+            "d170"                : <value>  # Lens Zoom
+            }
+'''
+
 PRESETS = {
     "default": {"exposurecompensation": "15", 
                 "d170": "0", 
@@ -71,18 +82,6 @@ def apply_preset(preset):
     
     for name, value in preset.items():
         set_config_value(name, value)
-'''
-#Retrieve a camera configuration using 'gphoto2 --get-config <name>'.
-def get_config_value(name):
-    
-    command = ["gphoto2", "--get-config", name]
-    try:
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
-        print(f"Configuration for '{name}':")
-        print(result.stdout.strip())
-    except subprocess.CalledProcessError as e:
-        print(f"Error getting configuration for {name}: {e.stderr}", file=sys.stderr)
-        sys.exit(1)'''
 
 # Clean a line by stripping whitespace, removing trailing commas, and stripping surrounding quotes. (used for exporting the json/csv file)
 def clean_line(line):
@@ -193,7 +192,8 @@ def main():
         export_configs_as_json(config_list, json_filepath)
         export_configs_as_csv(config_list, csv_filepath)
         #print("Capturing image...")
-        capture_image_and_download(preset_name)
+        for i in range(10):
+            capture_image_and_download(preset_name)
 
 if __name__ == "__main__":
     main()
