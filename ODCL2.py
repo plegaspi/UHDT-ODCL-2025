@@ -13,6 +13,7 @@ from datetime import datetime
 from sahi import AutoDetectionModel
 import logging
 import colorlog
+import json
 
 
 ##########
@@ -28,6 +29,7 @@ from classes import Target
 from Object_Detection import Object_Detection, adjust_bbox
 from Georeferencing import Georeference, haversine
 from Optimized_Payload_Matching import Optimized_Payload_Matching, create_waypoint_file
+import Camera
 
 
 #####################
@@ -58,8 +60,24 @@ waypoint_file_path = config.params["waypoint_file_path"]
 ##########
 # Camera #
 ##########
+config = Config("config/config.yaml")
 load_camera_config = config.params["camera"]["load_config"]
-camera_config_file = config.params["camera"]["config"]
+load_ext_camera_config = config.params["camera"]["load_ext_config"]
+camera_config_file = config.params["camera"]["ext_config"]
+camera_yaml_config= config.params["camera"]["config"]
+
+preset = None
+
+if load_ext_camera_config:
+    with open(camera_config_file) as f:
+        camera_config = json.load(f)
+        preset = {}
+        for key, value in camera_config.items():
+            preset[key] = value
+else:
+    preset = {key: value for key, value in camera_yaml_config.items() if value is not None}
+
+    
 
 
 #######################
