@@ -29,7 +29,7 @@ PRESETS = {
 }
 
 # Retrieve a list of PIDs for processes whose command line contains 'gphot', excluding 'grep'.
-def get_gphot_processes():
+def get_gphoto_processes():
 
     try:
         output = subprocess.check_output(["ps", "aux"], text=True)
@@ -53,9 +53,9 @@ def kill_process(pid):
         print(f"Error killing process {pid}: {e}", file=sys.stderr)
 
 # Find and kill processes matching 'gphot'.
-def kill_gphot_processes():
-    
-    pids = get_gphot_processes()
+def kill_gphoto_processes():
+
+    pids = get_gphoto_processes()
     if not pids:
         print("No matching 'gphot' processes found.")
         return
@@ -157,10 +157,8 @@ def export_configs_as_csv(config_list, filepath):
         sys.exit(1)
 
 # Capture an image using gphoto2 and download it to the specified folder.
-def capture_image_and_download(folder):
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    image_filepath = os.path.join(folder, f"captured_{timestamp}.jpg")
-    command = ["gphoto2", "--capture-image-and-download", "--filename", image_filepath]
+def trigger(file_name):
+    command = ["gphoto2", "--capture-image-and-download", "--filename", file_name]
     try:
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         #print(f"Image captured and saved as {image_filepath}")
@@ -170,8 +168,34 @@ def capture_image_and_download(folder):
         print(f"Error capturing image: {e.stderr}", file=sys.stderr)
         sys.exit(1)
 
+def flight_testing(presets, images_per_preset):
+    for preset_name, preset_values in PRESETS.items():
+        apply_preset(preset_values)
+        config_list = get_all_config_details()
+        if not os.path.exists(preset_name):
+            try:
+                os.makedirs(preset_name)
+            except OSError as e:
+                print(f"Error creating folder '{preset_name}': {e}", file=sys.stderr)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        json_filepath = os.path.join(preset_name, f"all_config_{timestamp}.json")
+        csv_filepath = os.path.join(preset_name, f"all_config_{timestamp}.csv")
+        
+        export_configs_as_json(config_list, json_filepath)
+        export_configs_as_csv(config_list, csv_filepath)
+        for i in range(images_per_preset):
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            image_filepath = os.path.join(preset_name, f"captured_{timestamp}.jpg")
+            trigger(image_filepath)
+
+def initialize(preset):
+    kill_gphoto_processes()
+    result = subprocess.run("gphoto2", "--auto-detect")
+    print("Camera connected")
+    apply_preset(preset)
+
 def main():
-    kill_gphot_processes()
+    kill_gphoto_processes()
     for preset_name, preset_values in PRESETS.items():
         #print(f"\n=== Applying preset '{preset_name}' ===")
         apply_preset(preset_values)
@@ -189,11 +213,15 @@ def main():
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         json_filepath = os.path.join(preset_name, f"all_config_{timestamp}.json")
         csv_filepath = os.path.join(preset_name, f"all_config_{timestamp}.csv")
+        
         export_configs_as_json(config_list, json_filepath)
         export_configs_as_csv(config_list, csv_filepath)
         #print("Capturing image...")
         for i in range(10):
-            capture_image_and_download(preset_name)
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            image_filepath = os.path.join(preset_name, f"captured_{timestamp}.jpg")
+            trigger(image_filepath)
+
 
 if __name__ == "__main__":
     main()
