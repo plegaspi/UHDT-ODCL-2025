@@ -2,9 +2,12 @@ import os
 import datetime
 import sys
 import Camera
+from Autonomous import CLASS 
 
 
 def main(images_per_preset):
+    IMU = CLASS()
+    
     PRESETS = Camera.PRESETS
     for preset_name, preset_values in PRESETS.items():
         Camera.apply_preset(preset_values)
@@ -25,3 +28,5 @@ def main(images_per_preset):
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             image_filepath = os.path.join(preset_name, f"captured_{timestamp}.jpg")
             Camera.trigger(image_filepath)
+            IMU.geotag(image_filepath)
+            
