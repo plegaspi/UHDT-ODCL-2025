@@ -30,7 +30,6 @@ PRESETS = {
 
 # Retrieve a list of PIDs for processes whose command line contains 'gphot', excluding 'grep'.
 def get_gphoto_processes():
-
     try:
         output = subprocess.check_output(["ps", "aux"], text=True)
     except subprocess.CalledProcessError as e:
