@@ -220,6 +220,7 @@ def main():
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             image_filepath = os.path.join(preset_name, f"captured_{timestamp}.jpg")
             trigger(image_filepath)
+            
 
 
 if __name__ == "__main__":
