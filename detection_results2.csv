@@ -1,0 +1,16 @@
+,Detected,Ground Truth,True Positive,False Positive,Missed,Precision,Recall,Accuracy
+person,0,0,1,0,0,1,1,1
+motorcycle,0,0,0,0,0,0,0,0
+car,0,0,0,0,0,0,0,0
+airplane,0,0,0,1,0,0,0,0
+bus,0,0,0,0,0,0,0,0
+boat,0,0,0,1,0,0,0,0
+stop_sign,0,0,0,0,0,0,0,0
+snowboard,0,0,0,0,0,0,0,0
+umbrella,0,0,0,0,0,0,0,0
+sports_ball,0,0,0,0,0,0,0,0
+baseball_bat,0,0,0,0,0,0,0,0
+bed,0,0,0,0,0,0,0,0
+tennis_racket,0,0,0,0,0,0,0,0
+suitcase,0,0,0,0,0,0,0,0
+Total,0,0,1,2,0,0.333333333,1,-
