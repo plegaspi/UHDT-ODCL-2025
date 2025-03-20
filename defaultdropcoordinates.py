@@ -18,19 +18,19 @@ def sort_coordinates(coordinates):
 
 #function to get the four midpoints
 def defaultdropcoordinates(coordinates):
-    x_coord = [coords[0] for coords in coordinates]
-    y_coord = [coords[1] for coords in coordinates]
+    long = [coords[0] for coords in coordinates]
+    lat = [coords[1] for coords in coordinates]
     # Calculate the averages
-    midpoint_x = sum(x_coord) / 4
-    midpoint_y = sum(y_coord) / 4
-    print(midpoint_x,midpoint_x)
+    midpoint_long = sum(long) / 4
+    midpoint_lat = sum(lat) / 4
+    print(midpoint_long,midpoint_lat)
     defaultdropcoords = []
     # Calculate the average between the midpoint and each of the four corners
     for i in range(len(coordinates)):
         x = (coordinates[i][0])
         y = (coordinates[i][1])
-        xave = (midpoint_x + x) / 2
-        yave = (midpoint_y + y) / 2
+        xave = (midpoint_long + x) / 2
+        yave = (midpoint_lat + y) / 2
         mids = (xave,yave)
         defaultdropcoords.append(mids)
     return (defaultdropcoords)
