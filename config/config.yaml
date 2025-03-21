@@ -25,8 +25,17 @@ airdrop_mode:
     option_3: [99,99]
     option_4: [99,99]
 camera:
-  load_config: false
-  config: "camera-config.json"
+  load_config: true
+  load_ext_config: true
+  ext_config: "config/camera.json"
+  config:
+    iso: 2
+    whitebalance: 10
+    exposurecompensation: 10
+    f-number: 8
+    shutterspeed: 10
+    d01c: 
+    d170: 
 object_detection:
   model: "weight/v9.pt"
   model_type: 'yolov8'
