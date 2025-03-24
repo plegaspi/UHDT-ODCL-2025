@@ -30,7 +30,7 @@ from Object_Detection import Object_Detection, adjust_bbox
 from Georeferencing import Georeference, haversine
 from Optimized_Payload_Matching import Optimized_Payload_Matching, create_waypoint_file
 import Camera
-
+from defaultdropcoordinates import defaultdropcoordinates, sort_coordinates
 
 #####################
 # Payload Delivery  #
@@ -306,7 +306,10 @@ def watch_directory():
         time.sleep(watch_delay)  
     print(f"After loop: {len(target_list)}")
     if len(target_list) >= len(targets) or num_photos_processed >= num_photos or timeout:
-        waypoints = Optimized_Payload_Matching(targets, target_list)
+        m_parameter = config.params[“georeferencing”][“dropzone”]
+        sorted_coords = sort_coordinates(m_parameter)
+        m_coordinates = defaultdropcoordinates(sorted_coords)
+        waypoints = Optimized_Payload_Matching(targets, target_list, m_coordinates)
         create_waypoint_file(target_list, waypoint_file_path)
         create_waypoint_file(target_list, runtime_dir)
         logging.info(f"Wrote waypoint file for {len(target_list)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
