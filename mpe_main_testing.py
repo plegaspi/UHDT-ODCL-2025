@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import mpe_functions as mpe
+import random
 #From Object_Detection import Object_Detection     From Obejct detection script
 
 # Constants
@@ -11,11 +12,14 @@ labels_directory = "labels_MPE_script_testing"
 image_directory = "test_image_folder"
 detect_model = "Yolo_model_something"
 config = "placeholder"
-output_csv = "detection_results3.csv"
+run_number = input("test run #: ")
+detect_output_csv = f"detection_results_{run_number}.csv"
+classify_output_csv = f"classification_results_{run_number}.csv"
 
 #data storage
-detection_data = {cls: {"Detected": 0, "Ground Truth": 0, "True Positive": 0, "False Positive": 0, "Missed": 0} 
-                  for cls in object_classes}
+detection_data = {cls: {"Ground Truth Number Detections": 0, "Detected": 0 , "True Positive": 0, "False Positive": 0, "Missed": 0} for cls in object_classes}
+classified_data = {cls: {f"{objclass}":0 for objclass in object_classes} for cls in object_classes}
+#print(classified_data)
 
 #loading annotations into array for later use
 def load_annotations(annotation_path, image_w=1280, image_h=720):
@@ -30,15 +34,16 @@ def load_annotations(annotation_path, image_w=1280, image_h=720):
                 ground_truth.append({"class_id": class_id, "bbox": xyxy_bbox, "matched": False})
     return ground_truth
 
-def gen_test_yoloresults(annotation_path, image_w=1280, image_h=720):  #making this function so i can maybe adjust and simulate yolo reults without actually running yolo on actual pics (need some desirable pics)
+def gen_test_yoloresults(annotation_path):  #making this function so i can maybe adjust and simulate yolo reults without actually running yolo on actual pics (need some desirable pics)
     sim_yolo_outputs = []
     if os.path.exists(annotation_path):
         with open(annotation_path, "r") as f:
             for line in f:
                 line_buff = []
                 values = line.split()
-                class_id = int(values[0])
-                bbox = tuple(map(float, values[1:]))  # YOLO format (cx, cy, w, h)
+                class_id = random.randint(0,13) #added rng to simulate "detections"
+                bbox = list(map(float, values[1:]))  # YOLO format (cx, cy, w, h)
+                bbox = [num + random.uniform(0,4) for num in bbox ]
                 line_buff.append(class_id)
                 line_buff.append(bbox)
                 sim_yolo_outputs.append(line_buff)
@@ -69,15 +74,25 @@ def match_detections(yolo_results, ground_truth, image_w=1280, image_h=720):
         #assign match
         if best_match and not best_match["matched"]:
             best_match["matched"] = True  # Mark annotation as matched
+
+            ######### if object was detected update confusion/misclassification count ####################
+            true_class = object_classes[best_match["class_id"]]
+            pred_class = object_classes[detected_class]
+            classified_data[true_class][pred_class] += 1
+
+            ######### update the metrics ###############################
             if detected_class == best_match["class_id"]:
                 detection_data[object_classes[detected_class]]["True Positive"] += 1
             else:
                 detection_data[object_classes[detected_class]]["False Positive"] += 1
+            detection_data[object_classes[detected_class]]["Detected"] += 1 #increment the detected value since this will count as a detection
         else:
             detection_data[object_classes[detected_class]]["False Positive"] += 1
+            detection_data[object_classes[detected_class]]["Detected"] += 1
 
     #count missed detections
     for annotation in ground_truth:
+        detection_data[object_classes[int(annotation["class_id"])]]["Ground Truth Number Detections"] += 1
         if not annotation["matched"]:
             detection_data[object_classes[annotation["class_id"]]]["Missed"] += 1
 
@@ -127,13 +142,6 @@ print(len(groundtruth_labels))'''
         # Match detections and compute stats
         match_detections(yolo_results, ground_truth)
 '''
-'''
-test_yoloresults = [[0, (0.68125, 0.6671875, 0.1390625, 0.171875)],
-                    [0, (0.86015625, 0.4828125, 0.2109375, 0.1453125)],
-                    [5, (0.146875, 0.46484375, 0.29375, 0.7578125)],
-                    [3, (0.609375, 0.5234375, 0.765625, 0.653125)]
-                    [0, (0.521875, 0.06875, 0.09375, 0.115625)]]
-'''
 match_detections(sim_test_yolo_results, groundtruth_labels, image_w=1280, image_h=720)
 print(detection_data)
 
@@ -146,30 +154,35 @@ for cls_name in object_classes:
 
     detection_data[cls_name]["Precision"] = metrics["Precision"]
     detection_data[cls_name]["Recall"] = metrics["Recall"]
-    detection_data[cls_name]["Accuracy"] = metrics["Accuracy"]
+    detection_data[cls_name]["Class Accuracy"] = metrics["Accuracy"]
 
 #doing math for an overall/total metrics
 df = pd.DataFrame.from_dict(detection_data, orient="index")
-total_detected = df["Detected"].sum()
+total_detect = df["Detected"].sum()
+total_GT = df["Ground Truth Number Detections"].sum()
 total_TP = df["True Positive"].sum()
 total_FP = df["False Positive"].sum()
 total_FN = df["Missed"].sum()
 
 overall_precision = total_TP / (total_TP + total_FP) if (total_TP + total_FP) > 0 else 0
 overall_recall = total_TP / (total_TP + total_FN) if (total_TP + total_FN) > 0 else 0
-overall_class_accuracy = total_TP/total_detected
+#overall_class_accuracy = total_TP/total_detect   #omitted since this is actually the same as precision
+overall_detect_accuracy = total_detect/total_GT
 
 #attach total stats to the datafram for csv
 total_row = df.sum(numeric_only=True)  #sum all numerical columns
 
 total_row.name = "Total"  #label the total row
-total_row["Precision"] = overall_precision
-total_row["Recall"] = overall_recall
-total_row["Accuracy"] =  df.iloc[-1][2] 
+total_row["Precision"] = round(overall_precision,3)
+total_row["Recall"] = round(overall_recall,3)
+total_row["Detect Accuracy"] = round(overall_detect_accuracy*100,3) #multiply 100 for percent. Remove if unnecessary
 
-df = df.append(total_row)
-#print()
-'''
-df.to_csv(output_csv, index=True)
-print(f"Detection results saved to {output_csv}")
-'''
+
+#turn the dictionaries into csv files.
+df = pd.concat([df, total_row.to_frame().T])
+df.to_csv(detect_output_csv, index=True)
+print(f"Detection results saved to {detect_output_csv}")
+
+df2 = pd.DataFrame.from_dict(classified_data, orient="index")
+df2.to_csv(classify_output_csv, index=True)
+print(f"Classification results saved to {classify_output_csv}")
