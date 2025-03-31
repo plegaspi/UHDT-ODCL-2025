@@ -1,6 +1,6 @@
-,person,motorcycle,car,airplane,bus,boat,stop_sign,snowboard,umbrella,sports_ball,baseball_bat,bed,tennis_racket,suitcase
-person,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-motorcycle,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+,d_person,d_motorcycle,d_car,d_airplane,d_bus,d_boat,d_stop_sign,d_snowboard,d_umbrella,d_sports_ball,d_baseball_bat,d_bed,d_tennis_racket,d_suitcase
+person,30,0,0,0,0,0,0,0,0,0,0,0,0,0
+motorcycle,0,2,0,0,0,0,0,0,0,0,0,0,0,0
 car,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 airplane,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 bus,0,0,0,0,0,0,0,0,0,0,0,0,0,0

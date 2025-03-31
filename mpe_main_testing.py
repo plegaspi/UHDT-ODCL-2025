@@ -18,8 +18,12 @@ classify_output_csv = f"classification_results_{run_number}.csv"
 
 #data storage
 detection_data = {cls: {"Ground Truth Number Detections": 0, "Detected": 0 , "True Positive": 0, "False Positive": 0, "Missed": 0} for cls in object_classes}
-classified_data = {cls: {f"{objclass}":0 for objclass in object_classes} for cls in object_classes}
+classified_data = {cls: {f"d_{objclass}":0 for objclass in object_classes} for cls in object_classes}
 #print(classified_data)
+
+raw_tp = 0
+raw_fn = 0
+raw_gt = 0
 
 #loading annotations into array for later use
 def load_annotations(annotation_path, image_w=1280, image_h=720):
@@ -32,8 +36,8 @@ def load_annotations(annotation_path, image_w=1280, image_h=720):
                 bbox = list(map(float, values[1:]))  # YOLO format (cx, cy, w, h)
                 xyxy_bbox = mpe.yolo_to_xyxy(bbox, image_w, image_h)  # Convert to (x1, y1, x2, y2)
                 ground_truth.append({"class_id": class_id, "bbox": xyxy_bbox, "matched": False})
+    #assert all("matched" in gt for gt in ground_truth)
     return ground_truth
-
 def gen_test_yoloresults(annotation_path):  #making this function so i can maybe adjust and simulate yolo reults without actually running yolo on actual pics (need some desirable pics)
     sim_yolo_outputs = []
     if os.path.exists(annotation_path):
@@ -41,9 +45,9 @@ def gen_test_yoloresults(annotation_path):  #making this function so i can maybe
             for line in f:
                 line_buff = []
                 values = line.split()
-                class_id = random.randint(0,13) #added rng to simulate "detections"
+                class_id = int(values[0])#random.randint(0,1) #added rng to simulate "detections"
                 bbox = list(map(float, values[1:]))  # YOLO format (cx, cy, w, h)
-                bbox = [num + random.uniform(0,4) for num in bbox ]
+                #bbox = [num + random.uniform(0,0.13) for num in bbox ]
                 line_buff.append(class_id)
                 line_buff.append(bbox)
                 sim_yolo_outputs.append(line_buff)
@@ -56,6 +60,7 @@ def gen_test_yoloresults(annotation_path):  #making this function so i can maybe
 
 #good chunk of the logic stuff, again line 42 will depend on formatting of yolo output
 def match_detections(yolo_results, ground_truth, image_w=1280, image_h=720):
+    global raw_tp, raw_fn, raw_gt
     for detection in yolo_results:
         detected_class = int(detection[0])  # Extract class ID
         bbox = detection[1]  # Extract YOLO bbox (cx, cy, w, h)
@@ -77,57 +82,32 @@ def match_detections(yolo_results, ground_truth, image_w=1280, image_h=720):
 
             ######### if object was detected update confusion/misclassification count ####################
             true_class = object_classes[best_match["class_id"]]
-            pred_class = object_classes[detected_class]
+            pred_class = f'd_{object_classes[detected_class]}'
             classified_data[true_class][pred_class] += 1
 
             ######### update the metrics ###############################
             if detected_class == best_match["class_id"]:
                 detection_data[object_classes[detected_class]]["True Positive"] += 1
+                raw_tp+=1
             else:
                 detection_data[object_classes[detected_class]]["False Positive"] += 1
             detection_data[object_classes[detected_class]]["Detected"] += 1 #increment the detected value since this will count as a detection
-        else:
-            detection_data[object_classes[detected_class]]["False Positive"] += 1
-            detection_data[object_classes[detected_class]]["Detected"] += 1
 
     #count missed detections
     for annotation in ground_truth:
-        detection_data[object_classes[int(annotation["class_id"])]]["Ground Truth Number Detections"] += 1
+        print(annotation)
+        class_name = object_classes[annotation["class_id"]]
+        detection_data[class_name]["Ground Truth Number Detections"] += 1
+        raw_gt += 1  # <--- Count total GTs
         if not annotation["matched"]:
-            detection_data[object_classes[annotation["class_id"]]]["Missed"] += 1
+            detection_data[class_name]["Missed"] += 1
+            raw_fn += 1  # <--- Count missed
 
 
 
 ###############TEST INPUTS#####################
 
 #testing load annotations/generate test yolo outputs functions (works)
-
-#count = 0
-sim_test_yolo_results = []   #both these to hold results
-groundtruth_labels = []
-
-for file in os.listdir(labels_directory):    #these two loops will put all the annotations into the lists
-    #print(file)
-    #count +=1
-    annotation_file = os.path.join(labels_directory,file)
-    annotation = gen_test_yoloresults(annotation_file)
-    #print(annotation, file)
-    sim_test_yolo_results.append(annotation)
-sim_test_yolo_results = [annotation for sublist in sim_test_yolo_results for annotation in sublist] #this bit combines all the arrays inside the results list into one giant list
-'''for thing in sim_test_yolo_results:
-    print(thing)
-print(len(sim_test_yolo_results))'''
-
-for file in os.listdir(labels_directory):
-    #print(file)
-    annotation_file_actual = os.path.join(labels_directory,file)
-    annotation = load_annotations(annotation_file_actual)
-    #print(annotation, file)
-    groundtruth_labels.append(annotation)
-groundtruth_labels = [annotation for sublist in groundtruth_labels for annotation in sublist]
-'''for item in groundtruth_labels:
-    print(item)
-print(len(groundtruth_labels))'''
 
 #main loop (need to test with actual folders) - but at least we know functions work with single files
 '''for image_file in os.listdir(image_directory):
@@ -142,7 +122,15 @@ print(len(groundtruth_labels))'''
         # Match detections and compute stats
         match_detections(yolo_results, ground_truth)
 '''
-match_detections(sim_test_yolo_results, groundtruth_labels, image_w=1280, image_h=720)
+for file in os.listdir(labels_directory):
+    annotation_path = os.path.join(labels_directory, file)
+    ground_truth = load_annotations(annotation_path)
+    yolo_results = gen_test_yoloresults(annotation_path)
+    
+    print(f"{file}: GT count = {len(ground_truth)}, YOLO results = {len(yolo_results)}")
+
+    match_detections(yolo_results, ground_truth)
+#match_detections(sim_test_yolo_results, groundtruth_labels, image_w=1280, image_h=720)
 print(detection_data)
 
 #math for metrics
@@ -177,6 +165,11 @@ total_row["Precision"] = round(overall_precision,3)
 total_row["Recall"] = round(overall_recall,3)
 total_row["Detect Accuracy"] = round(overall_detect_accuracy*100,3) #multiply 100 for percent. Remove if unnecessary
 
+print("\n=== RAW DEBUG STATS ===")
+print(f"Raw TP: {raw_tp}")
+print(f"Raw FN: {raw_fn}")
+print(f"Raw GT: {raw_gt}")
+print(f"TP + FN == GT? {raw_tp + raw_fn == raw_gt}")
 
 #turn the dictionaries into csv files.
 df = pd.concat([df, total_row.to_frame().T])
