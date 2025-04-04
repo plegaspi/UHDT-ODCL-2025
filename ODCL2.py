@@ -12,7 +12,6 @@ import math
 from datetime import datetime
 from sahi import AutoDetectionModel
 import logging
-import colorlog
 import json
 
 
@@ -83,10 +82,9 @@ else:
 #######################
 # Logging and History #
 #######################
-import logging
-import colorlog
 import os
 from datetime import datetime
+from Logger import *
 
 
 #######################
@@ -99,8 +97,8 @@ if config.params["runtime_folder_override"] != "":
         shutil.rmtree(config.params["runtime_folder_override"])
 else:
     runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_flight_testing")
-log_files_dir = os.path.join(runtime_dir, "logs")
 
+log_files_dir = os.path.join(runtime_dir, "logs")
 runtime_log_path = os.path.join(log_files_dir, "runtime.log")
 annotation_log_path = os.path.join(log_files_dir, "annotated_images.log")
 object_detection_log_path = os.path.join(log_files_dir, "object_detection.log")
@@ -110,95 +108,16 @@ results_log_path = os.path.join(log_files_dir, "results.log")
 
 os.makedirs(log_files_dir, exist_ok=True)
 
-COLOR_RESET = "\033[0m"
-COLOR_BLUE = "\033[34m"
-COLOR_CYAN = "\033[36m"
-COLOR_MAGENTA = "\033[35m"
-COLOR_WHITE = "\033[37m"
+
+Custom_Logger.setup_root_logger(runtime_log_path)
+annotated_logger = Custom_Logger("annotated", annotation_log_path)
+object_detection_logger = Custom_Logger("object-detection", object_detection_log_path)
+georeferencing_logger = Custom_Logger("georeferencing", georeferencing_log_path)
+optimized_payload_matching_logger = Custom_Logger("optimized-payload-matching", optimized_payload_matching_log_path)
+results_logger = Custom_Logger("results", results_log_path)
 
 
-LOGGER_COLORS = {
-    "annotated": COLOR_BLUE,
-    "object-detection": COLOR_CYAN,
-    "georeferencing": COLOR_MAGENTA,
-    "optimized-payload-matching": COLOR_WHITE,
-}
-
-
-LOG_LEVEL_COLORS = {
-    "DEBUG": "cyan",
-    "INFO": "green",
-    "WARNING": "yellow",
-    "ERROR": "red",
-    "CRITICAL": "bold_red",
-}
-
-logging.getLogger("matplotlib").setLevel(logging.WARNING)
-
-
-class CustomColoredFormatter(colorlog.ColoredFormatter):
-    def format(self, record):
-        log_color = LOGGER_COLORS.get(record.name, COLOR_RESET) 
-        timestamp = f"{log_color}{self.formatTime(record)}{COLOR_RESET}"  
-        record.asctime = timestamp 
-        return super().format(record) 
-def create_logger(name, log_file):
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-
-
-    logger.propagate = True  
-
-
-    if not logger.handlers:
-        formatter = CustomColoredFormatter(
-            log_format,
-            log_colors=LOG_LEVEL_COLORS,
-            reset=True,
-            style="%",
-        )
-
-
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-
-
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-
-
-        logger.addHandler(console_handler)
-        logger.addHandler(file_handler)
-
-    return logger
-
-
-log_format = "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s"
-
-
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.DEBUG)
-
-
-if not any(isinstance(h, logging.FileHandler) and h.baseFilename == runtime_log_path for h in root_logger.handlers):
-    runtime_handler = logging.FileHandler(runtime_log_path)
-    runtime_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    root_logger.addHandler(runtime_handler)  
-
-
-if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
-    root_logger.addHandler(logging.StreamHandler())
-
-
-
-annotated_logger = create_logger("annotated", annotation_log_path)
-object_detection_logger = create_logger("object-detection", object_detection_log_path)
-georeferencing_logger = create_logger("georeferencing", georeferencing_log_path)
-optimized_payload_matching_logger = create_logger("optimized-payload-matching", optimized_payload_matching_log_path)
-results_logger = create_logger("results", results_log_path)
-
-
-for handler in root_logger.handlers:
+for handler in Custom_Logger.get_root_logger().handlers:
     handler.flush()
     
 ####################
@@ -306,10 +225,10 @@ def watch_directory():
         time.sleep(watch_delay)  
     print(f"After loop: {len(target_list)}")
     if len(target_list) >= len(targets) or num_photos_processed >= num_photos or timeout:
-        m_parameter = config.params[“georeferencing”][“dropzone”]
-        sorted_coords = sort_coordinates(m_parameter)
-        m_coordinates = defaultdropcoordinates(sorted_coords)
-        waypoints = Optimized_Payload_Matching(targets, target_list, m_coordinates)
+        #m_parameter = config.params[“georeferencing”][“dropzone”]
+        #sorted_coords = sort_coordinates(m_parameter)
+        #m_coordinates = defaultdropcoordinates(sorted_coords)
+        waypoints = Optimized_Payload_Matching(targets, target_list)
         create_waypoint_file(target_list, waypoint_file_path)
         create_waypoint_file(target_list, runtime_dir)
         logging.info(f"Wrote waypoint file for {len(target_list)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
