@@ -50,6 +50,19 @@ object_detection:
     perform_standard_pred: false
     postprocess_match_metric: "IOU"
     postprocess_match_threshold: 0.3
+  sahi-single-prediction-postprocess:
+    options: [
+      "None",                   #0
+      "GreedyNMMPostprocess",   #1
+      "LSNMSPostprocess",       #2
+      "NMMPostprocess",         #3
+      "NMSPostprocess",         #4
+      "PostprocessPredictions", #5
+    ]
+    choice: 3
+    match_threshold: 0.2
+    match_metric: "IOU"
+    class_agnostic: true 
 georeferencing:
   duplicate_threshold: 3
 

@@ -86,6 +86,9 @@ class Custom_Logger:
     def setup_root_logger(runtime_log_path):
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
+        
+        logging.getLogger("matplotlib").setLevel(logging.WARNING)
+        logging.getLogger("PIL").setLevel(logging.WARNING)  
 
         if not any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == os.path.abspath(runtime_log_path)
                    for h in root_logger.handlers):

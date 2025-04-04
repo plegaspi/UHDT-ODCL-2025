@@ -90,6 +90,7 @@ from Logger import *
 #######################
 # Logging and History #
 #######################
+logging_enabled = config.params["logging"]
 runtime_history_dir = config.params["runtime_history_dir"]
 if config.params["runtime_folder_override"] != "":
     runtime_dir = os.path.join(config.params["runtime_folder_override"])
@@ -163,6 +164,20 @@ sahi_config = {
     "postprocess_match_threshold": sahi_postprocess_match_threshold
 }
 
+sahi_postprocess_config = config.params["object_detection"]["sahi-single-prediction-postprocess"]
+sahi_single_prediction_postprocess_options = sahi_postprocess_config["options"]
+sahi_single_prediction_postprocess_choice = sahi_postprocess_config["choice"]
+sahi_single_prediction_postprocess_match_threshold = sahi_postprocess_config["match_threshold"]
+sahi_single_prediction_postprocess_match_metric = sahi_postprocess_config["match_metric"]
+sahi_single_prediction_postprocess_class_agnostic = sahi_postprocess_config["class_agnostic"]
+
+sahi_single_prediction_postprocess_config = {
+    "postprocess_type": sahi_single_prediction_postprocess_choice,
+    "match_threshold": sahi_single_prediction_postprocess_match_threshold,
+    "match_metric":sahi_single_prediction_postprocess_match_metric,
+    "class_agnostic": sahi_single_prediction_postprocess_class_agnostic
+}
+
 #################
 # Initializers #
 ################
@@ -230,7 +245,7 @@ def watch_directory():
         #m_coordinates = defaultdropcoordinates(sorted_coords)
         waypoints = Optimized_Payload_Matching(targets, target_list)
         create_waypoint_file(target_list, waypoint_file_path)
-        create_waypoint_file(target_list, runtime_dir)
+        create_waypoint_file(target_list, os.path.join(runtime_dir, waypoint_file_path))
         logging.info(f"Wrote waypoint file for {len(target_list)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
 
 def initialize(runtime_type):
@@ -262,7 +277,7 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
     has_unique_targets = 0
     logging.info(f"Running ODCL for {source_destination_path}")
     start_time = time.time()
-    results = Object_Detection(img, detection_model, sahi_config)
+    results = Object_Detection(img, detection_model, sahi_config, sahi_single_prediction_postprocess_config)
     if debug:
         results.export_visuals(file_name=os.path.splitext(os.path.split(img_path)[1])[0], export_dir=annotated_detections_dir)
         annotated_logger.info(f"Saved annotated image to {annotated_detections_dir}")

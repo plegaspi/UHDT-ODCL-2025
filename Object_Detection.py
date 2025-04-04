@@ -1,22 +1,42 @@
+from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction, get_prediction
+from sahi.postprocess.combine import (
+    GreedyNMMPostprocess,
+    LSNMSPostprocess,
+    NMMPostprocess,
+    NMSPostprocess,
+    PostprocessPredictions,
+)
+from sahi.utils.cv import visualize_object_predictions
+import os
+import cv2
+from PIL import Image
 
-def Object_Detection(image, detection_model, config):
-    if config["slice"]:
+def Object_Detection(image, detection_model, sahi_config, sahi_single_prediction_postprocess_config):
+    if sahi_config["slice"]:
         result = get_sliced_prediction(
             image,
             detection_model,
-            slice_height= config["slice_height"],
-            slice_width= config["slice_width"],
-            overlap_height_ratio= config["overlap_height_ratio"],
-            overlap_width_ratio= config["overlap_width_ratio"],
-            perform_standard_pred= config["perform_standard_pred"],
-            postprocess_match_metric= config["postprocess_match_metric"],
-            postprocess_match_threshold= config["postprocess_match_threshold"]
+            slice_height= sahi_config["slice_height"],
+            slice_width= sahi_config["slice_width"],
+            overlap_height_ratio= sahi_config["overlap_height_ratio"],
+            overlap_width_ratio= sahi_config["overlap_width_ratio"],
+            perform_standard_pred= sahi_config["perform_standard_pred"],
+            postprocess_match_metric= sahi_config["postprocess_match_metric"],
+            postprocess_match_threshold= sahi_config["postprocess_match_threshold"]
         )
     else:
-        result = get_prediction(image=image, detection_model=detection_model)
+        postprocess_types = [None, GreedyNMMPostprocess, LSNMSPostprocess, NMMPostprocess, NMSPostprocess, PostprocessPredictions]
+        postprocess_type = None
+        if sahi_single_prediction_postprocess_config["postprocess_type"] != 0:
+            postprocess_type = postprocess_types[sahi_single_prediction_postprocess_config["postprocess_type"]](
+                match_threshold = sahi_single_prediction_postprocess_config["match_threshold"],
+                match_metric = sahi_single_prediction_postprocess_config["match_metric"],
+                class_agnostic = sahi_single_prediction_postprocess_config["class_agnostic"],
+            )
+        result = get_prediction(image=image, detection_model=detection_model, postprocess=postprocess_type)
+        
     return result
-    
 
 def adjust_bbox(bb, padding, img_width, img_height):
     x_min, y_min, x_max, y_max = bb
