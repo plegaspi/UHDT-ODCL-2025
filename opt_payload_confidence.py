@@ -86,7 +86,7 @@ def opt_payload(targets, target_list):
                 max_index = ind[men]
             else:
                 pass
-
+        payload[max_index]=2
         rep =0 
         for n in range(len(target_list)):
             if max_ == target_list[n][1]:
