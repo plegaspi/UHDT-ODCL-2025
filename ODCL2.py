@@ -27,7 +27,7 @@ from classes import Target
 ###################
 from Object_Detection import Object_Detection, adjust_bbox
 from Georeferencing import Georeference, haversine
-from Optimized_Payload_Matching import Optimized_Payload_Matching, create_waypoint_file
+from OPM2 import Optimized_Payload_Matching, create_waypoint_file
 import Camera
 from defaultdropcoordinates import defaultdropcoordinates, sort_coordinates
 
@@ -111,11 +111,11 @@ os.makedirs(log_files_dir, exist_ok=True)
 
 
 Custom_Logger.setup_root_logger(runtime_log_path)
-annotated_logger = Custom_Logger("annotated", annotation_log_path)
-object_detection_logger = Custom_Logger("object-detection", object_detection_log_path)
-georeferencing_logger = Custom_Logger("georeferencing", georeferencing_log_path)
-optimized_payload_matching_logger = Custom_Logger("optimized-payload-matching", optimized_payload_matching_log_path)
-results_logger = Custom_Logger("results", results_log_path)
+annotated_logger = Custom_Logger("annotated", annotation_log_path, logging_enabled)
+object_detection_logger = Custom_Logger("object-detection", object_detection_log_path, logging_enabled)
+georeferencing_logger = Custom_Logger("georeferencing", georeferencing_log_path, logging_enabled)
+optimized_payload_matching_logger = Custom_Logger("optimized-payload-matching", optimized_payload_matching_log_path, logging_enabled)
+results_logger = Custom_Logger("results", results_log_path, logging_enabled)
 
 
 for handler in Custom_Logger.get_root_logger().handlers:
@@ -239,14 +239,15 @@ def watch_directory():
 
         time.sleep(watch_delay)  
     print(f"After loop: {len(target_list)}")
+    # Condition below clamps to 4
     if len(target_list) >= len(targets) or num_photos_processed >= num_photos or timeout:
         #m_parameter = config.params[“georeferencing”][“dropzone”]
         #sorted_coords = sort_coordinates(m_parameter)
         #m_coordinates = defaultdropcoordinates(sorted_coords)
         waypoints = Optimized_Payload_Matching(targets, target_list)
-        create_waypoint_file(target_list, waypoint_file_path)
-        create_waypoint_file(target_list, os.path.join(runtime_dir, waypoint_file_path))
-        logging.info(f"Wrote waypoint file for {len(target_list)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
+        create_waypoint_file(waypoints, waypoint_file_path)
+        create_waypoint_file(waypoints, os.path.join(runtime_dir, waypoint_file_path))
+        logging.info(f"Wrote waypoint file for {len(waypoints)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
 
 def initialize(runtime_type):
     logging.info("Initializing system...")
@@ -288,11 +289,11 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
     
     for i in range(len(results.object_prediction_list)):
         if len(target_list) >= 4:
-            logging.warning("Target Limit Reached")
-            break
+            logging.warning("More than 4 targets detected")
+            #break
 
         predicted_classes = results.object_prediction_list[i].category
-        confidence_scores = results.object_prediction_list[i].score
+        confidence_scores = results.object_prediction_list[i].score.value
         object_detection_logger.info(f"Detected: {predicted_classes} with scores {confidence_scores}")
     
         BB = results.object_prediction_list[i].bbox.to_voc_bbox()

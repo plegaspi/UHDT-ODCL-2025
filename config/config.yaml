@@ -40,14 +40,14 @@ object_detection:
   model: "weight/v9.pt"
   model_type: 'yolov8'
   confidence_threshold: 0.25
-  device: "cuda:0"
+  device: "mpss"
   sahi:
-    slice: false
+    slice: true
     slice_height: 640
     slice_width: 640
     overlap_height_ratio: 0.11
     overlap_width_ratio: 0.11
-    perform_standard_pred: false
+    perform_standard_pred: true
     postprocess_match_metric: "IOU"
     postprocess_match_threshold: 0.3
   sahi-single-prediction-postprocess:

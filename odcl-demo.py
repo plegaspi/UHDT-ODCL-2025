@@ -12,10 +12,10 @@ process2 = subprocess.Popen(["python", scripts[1]])
 process2.wait()  # This ensures Process 3 only starts after Process 2 finishes
 
 # Start Process 3 (show_detections.py) only after Process 2 has ended
-process3 = subprocess.Popen(["python", scripts[2], "odcl_demo/unique_targets"])
+#process3 = subprocess.Popen(["python", scripts[2], "odcl_demo/unique_targets"])
 
 # Wait for all processes to finish
 for process in processes:
     process.wait()
 
-process3.wait()  # Ensure Process 3 completes before exiting
+#process3.wait()  # Ensure Process 3 completes before exiting

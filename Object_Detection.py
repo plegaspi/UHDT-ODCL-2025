@@ -23,7 +23,8 @@ def Object_Detection(image, detection_model, sahi_config, sahi_single_prediction
             overlap_width_ratio= sahi_config["overlap_width_ratio"],
             perform_standard_pred= sahi_config["perform_standard_pred"],
             postprocess_match_metric= sahi_config["postprocess_match_metric"],
-            postprocess_match_threshold= sahi_config["postprocess_match_threshold"]
+            postprocess_match_threshold= sahi_config["postprocess_match_threshold"],
+            postprocess_class_agnostic=True
         )
     else:
         postprocess_types = [None, GreedyNMMPostprocess, LSNMSPostprocess, NMMPostprocess, NMSPostprocess, PostprocessPredictions]
@@ -53,3 +54,23 @@ def adjust_bbox(bb, padding, img_width, img_height):
         padding -= 1
 
     return (new_x_min, new_y_min, new_x_max, new_y_max)
+
+if __name__ == "__main__":
+    image_name = ""
+    sahi_config = {
+        "slice": False,
+        "slice_height": 640,
+        "slice_width": 640,
+        "overlap_height_ratio": 0.11,
+        "overlap_width_ratio": 0.11,
+        "perform_standard_pred": False,
+        "postprocess_match_metric": "IOU",
+        "postprocess_match_threshold": 0.3
+    }
+
+    sahi_single_prediction_postprocess_config = {
+        "postprocess_type": "NMMPostprocess",
+        "match_threshold": 0.2,
+        "match_metric": "IOU",
+        "class_agnostic": True
+    }
