@@ -42,7 +42,7 @@ def rotate_point_local(point, angle):
             x * math.sin(angle) + y * math.cos(angle))
 
 
-def plan_mission_aligned_minimal_snake_vertical(airdrop_coords, photo_width_px, photo_height_px,
+def plan_mission(airdrop_coords, photo_width_px, photo_height_px,
                                                 horizontal_fov_deg, vertical_fov_deg, overlap_percent,
                                                 altitude=100):
     h_fov_rad = math.radians(horizontal_fov_deg)
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     photo_height = 5152      # pixels 
     horizontal_fov = 30.493403035878764  # degrees
     vertical_fov = 20.469605526846422     # degrees
-    overlap = 20              # 0% overlap
+    overlap = 20              # % overlap
     flight_altitude = 22.5   # meters
 
     boundary_coords = [bound1, bound2, bound3, bound4, bound1]
@@ -170,13 +170,13 @@ if __name__ == "__main__":
     center_lon = sum(pt[1] for pt in boundary_coords) / len(boundary_coords)
 
     (drone_waypoints, angle, rect_centroid, transformer_to_utm, transformer_from_utm,
-    ground_width, ground_height, n_cols, n_rows) = plan_mission_aligned_minimal_snake_vertical(
+    ground_width, ground_height, n_cols, n_rows) = plan_mission(
         boundary_coords, photo_width, photo_height, horizontal_fov, vertical_fov, overlap,
         altitude=flight_altitude
     )
 
     print(f"Grid: {n_cols} columns, {n_rows} rows")
-    print(f"Total waypoints (vertical snake): {len(drone_waypoints)}")
+    print(f"Total waypoints: {len(drone_waypoints)}")
     total = calculate_total_distance(drone_waypoints)
     print(f"Total distance traveled: {total:.2f} meters")
 
@@ -190,6 +190,7 @@ if __name__ == "__main__":
 
 
     for idx, wp in enumerate(drone_waypoints):
+        print(f"{wp[0]}, {wp[1]}")
         folium.Marker(location=wp, popup=f"WP {idx+1}",
                     icon=folium.Icon(color='blue', icon='info-sign')).add_to(mission_map)
         
@@ -223,5 +224,5 @@ if __name__ == "__main__":
         folium.Polygon(locations=footprint_gps, color='green', weight=1.5,
                     opacity=0.8, fill=True, fill_opacity=0.2).add_to(mission_map)
 
-    mission_map.save('drone_mission_map_aligned_snake_vertical.html')
-    print("Map saved as 'drone_mission_map_aligned_snake_vertical.html'.")
+    mission_map.save('mission_waypoints.html')
+    print("Map saved as 'mission_waypoints.html'.")
