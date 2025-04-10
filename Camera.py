@@ -5,7 +5,7 @@ import json
 import csv
 import os
 from datetime import datetime
-
+import time
 ''' Template
 "<name>":  {"iso"                 : <value>,
             "whitebalance"        : <value>,
@@ -16,17 +16,28 @@ from datetime import datetime
             "d170"                : <value>  # Lens Zoom
             }
 '''
+reset_zoom = {
+    "d170": 1  # Lens Zoom
+}
+
+default = {
+    "iso": 12, #
+    "f-number": 2, #
+    "shutterspeed": 16, #
+    "d170": 40  # Lens Zoom
+}
 
 PRESETS = {
-    "default": {"exposurecompensation": "15", 
-                "d170": "0", 
-                "iso": "2"
-                },
-    "preset2": {"exposurecompensation": "10", 
-                "d170": "1", 
-                "iso": "4"
-                }
+    "default": {
+        "iso": 12, #
+        "f-number": 2, #
+        "shutterspeed": 16, #
+        "d170": 40  # Lens Zoom
+    }
 }
+
+def test():
+    print("Printing")
 
 # Retrieve a list of PIDs for processes whose command line contains 'gphot', excluding 'grep'.
 def get_gphoto_processes():
@@ -34,7 +45,6 @@ def get_gphoto_processes():
         output = subprocess.check_output(["ps", "aux"], text=True)
     except subprocess.CalledProcessError as e:
         print("Error running ps aux:", e, file=sys.stderr)
-        sys.exit(1)
     pids = []
     for line in output.splitlines():
         if "gphot" in line and "grep" not in line:
@@ -73,12 +83,11 @@ def set_config_value(name, value):
             print(result.stdout.strip())
     except subprocess.CalledProcessError as e:
         print(f"Error setting {name} to {value}: {e.stderr}", file=sys.stderr)
-        sys.exit(1)
+
 
 
 #Apply a preset by setting each configuration value.
 def apply_preset(preset):
-    
     for name, value in preset.items():
         set_config_value(name, value)
 
@@ -167,25 +176,47 @@ def trigger(file_name):
         print(f"Error capturing image: {e.stderr}", file=sys.stderr)
         sys.exit(1)
 
-def flight_testing(presets, images_per_preset):
+def flight_testing(presets, images_per_preset, geotag):
+    print(os.getcwd())
+    base_folder = datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
+    os.makedirs(base_folder)
     for preset_name, preset_values in PRESETS.items():
+        start_time = time.monotonic()
         apply_preset(preset_values)
+        print(f"Preset Configuration Time: {time.monotonic()-start_time}")
         config_list = get_all_config_details()
-        if not os.path.exists(preset_name):
+        preset_folder = os.path.join(base_folder, preset_name)
+        if not os.path.exists(base_folder):
             try:
-                os.makedirs(preset_name)
+                os.makedirs(base_folder)
             except OSError as e:
-                print(f"Error creating folder '{preset_name}': {e}", file=sys.stderr)
+                print(f"Error creating folder '{base_folder}': {e}", file=sys.stderr)
+        if not os.path.exists(preset_folder):
+            try:
+                os.makedirs(preset_folder)
+            except OSError as e:
+                print(f"Error creating folder '{preset_folder}': {e}", file=sys.stderr)
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        json_filepath = os.path.join(preset_name, f"all_config_{timestamp}.json")
-        csv_filepath = os.path.join(preset_name, f"all_config_{timestamp}.csv")
+        json_filepath = os.path.join(preset_folder, f"all_config_{timestamp}.json")
+        presets_json_filepath = os.path.join(preset_folder, f"presets.json")
+        csv_filepath = os.path.join(preset_folder, f"all_config_{timestamp}.csv")
         
         export_configs_as_json(config_list, json_filepath)
         export_configs_as_csv(config_list, csv_filepath)
+        with open(presets_json_filepath, "w") as presets_json:
+            json.dump(PRESETS, presets_json, indent=2)
         for i in range(images_per_preset):
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            image_filepath = os.path.join(preset_name, f"captured_{timestamp}.jpg")
+            image_filepath = os.path.join(preset_folder, f"captured_{timestamp}.jpg")
+            capture_start_time = time.monotonic()
             trigger(image_filepath)
+            if (os.path.exists(image_filepath)):
+                geotag(image_filepath)
+            else:
+                print(f"No picture triggered for {preset_name}")
+            print(f"Processed image in {time.monotonic()-capture_start_time}")
+        print("Completed. Changing zoom to default.")
+        apply_preset(reset_zoom)
 
 def initialize(preset):
     kill_gphoto_processes()
@@ -194,7 +225,7 @@ def initialize(preset):
     apply_preset(preset)
 
 def main():
-    kill_gphoto_processes()
+    #kill_gphoto_processes()
     for preset_name, preset_values in PRESETS.items():
         #print(f"\n=== Applying preset '{preset_name}' ===")
         apply_preset(preset_values)
@@ -220,8 +251,16 @@ def main():
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             image_filepath = os.path.join(preset_name, f"captured_{timestamp}.jpg")
             trigger(image_filepath)
-            
+        
+def initialize(preset):
+    print("Applying configuration to camera.")
+    for name, value in preset.items():
+        print(f"\t{name}: {value}")
+    apply_preset(preset)
+    print("Sucessfully applied configuration settings. ")
 
+def dummy(argument):
+    print(argument)
 
 if __name__ == "__main__":
-    main()
+    initialize(default)
