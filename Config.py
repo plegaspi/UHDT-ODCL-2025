@@ -6,7 +6,6 @@ class Config():
         self.params = self.read_configuration_file()
         self.targets = self.parse_targets()
         self.is_logging_enabled = self.parse_logging()
-        self.default_drop_zones = self.parse_default_dropzones()
         self.watch_dir_path = self.params["watch_directory"]
     
     def read_configuration_file(self):
@@ -24,9 +23,4 @@ class Config():
     def parse_logging(self):
         is_logging_enabled = self.params["logging"]
         return is_logging_enabled
-    
-    def parse_default_dropzones(self):
-        mode = self.params["mode"]
-        drop_zones = self.params["airdrop_mode"][mode]
-        assert(len(drop_zones) == 4), f"Found {len(drop_zones)} drop zones in configuration file for mode {mode}. You must enter exactly 4 drop zones."
-        return drop_zones
+

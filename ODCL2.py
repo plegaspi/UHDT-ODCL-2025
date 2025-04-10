@@ -1,7 +1,6 @@
 ##########
 # Utils #
 #########
-from metadataExtractor2 import extractMetadata
 import cv2
 import os
 from PIL import Image
@@ -26,10 +25,9 @@ from classes import Target
 # ODCL Algorithms #
 ###################
 from Object_Detection import Object_Detection, adjust_bbox
-from Georeferencing import Georeference, haversine
-from OPM2 import Optimized_Payload_Matching, create_waypoint_file
+from Georeferencing import Georeference, haversine, extractMetadata
+from OPM2 import Optimized_Payload_Matching, create_waypoint_file, calculate_default_drop_coordinates, sort_coordinates, get_midpoint
 import Camera
-from defaultdropcoordinates import defaultdropcoordinates, sort_coordinates
 
 #####################
 # Payload Delivery  #
@@ -178,6 +176,23 @@ sahi_single_prediction_postprocess_config = {
     "class_agnostic": sahi_single_prediction_postprocess_class_agnostic
 }
 
+
+##################
+# Georeferencing #
+##################
+altitude_offset = config.params["georeferencing"]['altitude_offset']
+sensor_height = config.params["camera"]['sensor_height']
+sensor_width = config.params["camera"]['sensor_width']
+
+#############
+# Air Drop #
+############
+bound1 = config.params["airdrop"]["boundary"]["bound_1"]
+bound2 = config.params["airdrop"]["boundary"]["bound_2"]
+bound3 = config.params["airdrop"]["boundary"]["bound_3"]
+bound4 = config.params["airdrop"]["boundary"]["bound_4"]
+default_drop_coordinates = calculate_default_drop_coordinates(sort_coordinates([bound1, bound2, bound3, bound4]))
+
 #################
 # Initializers #
 ################
@@ -244,7 +259,7 @@ def watch_directory():
         #m_parameter = config.params[“georeferencing”][“dropzone”]
         #sorted_coords = sort_coordinates(m_parameter)
         #m_coordinates = defaultdropcoordinates(sorted_coords)
-        waypoints = Optimized_Payload_Matching(targets, target_list)
+        waypoints = Optimized_Payload_Matching(targets, target_list, default_drop_coordinates)
         create_waypoint_file(waypoints, waypoint_file_path)
         create_waypoint_file(waypoints, os.path.join(runtime_dir, waypoint_file_path))
         logging.info(f"Wrote waypoint file for {len(waypoints)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
@@ -284,43 +299,42 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
         annotated_logger.info(f"Saved annotated image to {annotated_detections_dir}")
 
     if results.object_prediction_list:
-        metadata, drone_latitude, drone_longitude, drone_altitude, drone_yaw = extractMetadata(img_path)
+        metadata, latitude, longitude, altitude, yaw, pix_width, pix_height, focal_length = extractMetadata(img_path)
     
-    
-    for i in range(len(results.object_prediction_list)):
-        if len(target_list) >= 4:
-            logging.warning("More than 4 targets detected")
-            #break
+        for i in range(len(results.object_prediction_list)):
+            if len(target_list) >= 4:
+                logging.warning("More than 4 targets detected")
+                #break
 
-        predicted_classes = results.object_prediction_list[i].category
-        confidence_scores = results.object_prediction_list[i].score.value
-        object_detection_logger.info(f"Detected: {predicted_classes} with scores {confidence_scores}")
-    
-        BB = results.object_prediction_list[i].bbox.to_voc_bbox()
-        center_x = (BB[0] + BB[2]) / 2
-        center_y = (BB[1] + BB[3]) / 2
+            predicted_classes = results.object_prediction_list[i].category
+            confidence_scores = results.object_prediction_list[i].score.value
+            object_detection_logger.info(f"Detected: {predicted_classes} with scores {confidence_scores}")
         
-        target_latitude, target_longitude = Georeference(
-            drone_latitude, drone_longitude, drone_altitude, drone_yaw, (center_x, center_y)
-        )
+            BB = results.object_prediction_list[i].bbox.to_voc_bbox()
+            center_x = (BB[0] + BB[2]) / 2
+            center_y = (BB[1] + BB[3]) / 2
+            
+            target_latitude, target_longitude = Georeference(
+                (center_x, center_y), latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_height, pix_width, pix_height, focal_length
+            )
 
-        adjusted_BB = adjust_bbox(BB, 10, img.width, img.height)
-        
-        if not target_list or all(
-            abs(haversine(target.latitude, target.longitude, target_latitude, target_longitude)) > 2
-            for target in target_list
-        ):
-            georeferencing_logger.info(f"{source_destination_path}: Potential target at X: {center_x}, Y: {center_y} is located at Lat: {target_latitude}, {target_longitude}")
-            cropped = np.array(img.crop(adjusted_BB))
-            cropped = cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR)
-            cropped_name = f"{os.path.splitext(os.path.split(img_path)[1])[0]}-{center_x}-{center_y}.{os.path.splitext(os.path.split(img_path)[1])[1]}"
-            cropped_path = os.path.join(cropped_detections_dir, cropped_name)
-            cv2.imwrite(cropped_path, cropped)
-            logging.info(f"Saved cropped target to {cropped_path}")
-            target = Target(predicted_classes, confidence_scores, target_latitude, target_longitude)
-            target_list.append(target)
-            has_unique_targets += 1
-            print(f"During loop: {len(target_list)}")
+            adjusted_BB = adjust_bbox(BB, 10, img.width, img.height)
+            
+            if not target_list or all(
+                abs(haversine(target.latitude, target.longitude, target_latitude, target_longitude)) > 2
+                for target in target_list
+            ):
+                georeferencing_logger.info(f"{source_destination_path}: Potential target at X: {center_x}, Y: {center_y} is located at Lat: {target_latitude}, {target_longitude}")
+                cropped = np.array(img.crop(adjusted_BB))
+                cropped = cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR)
+                cropped_name = f"{os.path.splitext(os.path.split(img_path)[1])[0]}-{center_x}-{center_y}.{os.path.splitext(os.path.split(img_path)[1])[1]}"
+                cropped_path = os.path.join(cropped_detections_dir, cropped_name)
+                cv2.imwrite(cropped_path, cropped)
+                logging.info(f"Saved cropped target to {cropped_path}")
+                target = Target(predicted_classes, confidence_scores, target_latitude, target_longitude)
+                target_list.append(target)
+                has_unique_targets += 1
+                print(f"During loop: {len(target_list)}")
 
     end_time = time.time() - start_time
     logging.info(f"Completed ODCL for {source_destination_path}. Elapsed Time: {end_time}")

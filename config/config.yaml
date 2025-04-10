@@ -8,12 +8,19 @@ valid_targets: [
   "boat", "stop_sign", "snowboard", "umbrella", "sports_ball", 
   "baseball_bat", "bed", "tennis_racket", "suitcase", "skis" 
 ]
-logging: true
+flight_testing:
+  flight_testing_dir: "flight_testing"
+logging: false
 runtime_history_dir: "runtime"
 runtime_folder_override: "odcl_demo"
 watch_directory: "synthetic_images/dest"
 waypoint_file_path: "waypoints.txt"
-airdrop_mode:
+airdrop:
+  boundary:
+    bound_1: [21.400355, -157.764440]
+    bound_2: [21.400551, -157.763874]
+    bound_3: [21.400778, -157.763964]
+    bound_4: [21.400607, -157.764499]
   flight_testing:
     option_1: [21.40096,-157.76345]
     option_2: [21.40096,-157.76495]
@@ -24,10 +31,18 @@ airdrop_mode:
     option_2: [99,99]
     option_3: [99,99]
     option_4: [99,99]
+  manual:
+    option_1: [99,99]
+    option_2: [99,99]
+    option_3: [99,99]
+    option_4: [99,99]
+
 camera:
   load_config: true
   load_ext_config: true
   ext_config: "config/camera.json"
+  sensor_height: 15.6 # mm
+  sensor_width: 23.55 # mm
   config:
     iso: 2
     whitebalance: 10
@@ -42,7 +57,7 @@ object_detection:
   confidence_threshold: 0.25
   device: "mpss"
   sahi:
-    slice: true
+    slice: false
     slice_height: 640
     slice_width: 640
     overlap_height_ratio: 0.11
@@ -65,4 +80,5 @@ object_detection:
     class_agnostic: true 
 georeferencing:
   duplicate_threshold: 3
+  altitude_offset: 0
 
