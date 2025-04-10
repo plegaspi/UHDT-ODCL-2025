@@ -144,6 +144,17 @@ def plan_mission(airdrop_coords, photo_width_px, photo_height_px,
     return (gps_waypoints, angle, rect_centroid, transformer_to_utm,
             transformer_from_utm, ground_width, ground_height, n_cols, n_rows)
 
+def save_to_mission_planner_file(waypoints, altitude, filename="mission.waypoints", reverse=False):
+    if reverse:
+        waypoints = list(reversed(waypoints))
+    
+    with open(filename, 'w') as f:
+        f.write("QGC WPL 110\n")
+        for i, (lat, lon) in enumerate(waypoints):
+            f.write(f"{i}\t0\t3\t16\t0\t0\t0\t0\t{lat:.7f}\t{lon:.7f}\t{altitude:.2f}\t1\n")
+    
+    print(f"Saved Mission Planner file as '{filename}' ({'reversed' if reverse else 'normal'} order)")
+
 if __name__ == "__main__":
     from Config import Config
     from OPM2 import calculate_default_drop_coordinates, sort_coordinates
@@ -224,5 +235,7 @@ if __name__ == "__main__":
         folium.Polygon(locations=footprint_gps, color='green', weight=1.5,
                     opacity=0.8, fill=True, fill_opacity=0.2).add_to(mission_map)
 
+    # Call this function using your drone waypoints
+    save_to_mission_planner_file(drone_waypoints, flight_altitude, reverse=True)
     mission_map.save('mission_waypoints.html')
     print("Map saved as 'mission_waypoints.html'.")
