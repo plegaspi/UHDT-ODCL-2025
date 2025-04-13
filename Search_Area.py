@@ -5,6 +5,8 @@ import offline_folium
 import folium
 
 import math
+
+
 def haversine_distance(point1, point2):
     # Earth radius in meters
     R = 6371000
@@ -174,6 +176,8 @@ if __name__ == "__main__":
     vertical_fov = 20.469605526846422     # degrees
     overlap = 20              # % overlap
     flight_altitude = 22.5   # meters
+    is_reversed = False
+
 
     boundary_coords = [bound1, bound2, bound3, bound4, bound1]
 
@@ -199,9 +203,10 @@ if __name__ == "__main__":
     for coord in boundary_coords:
         folium.CircleMarker(location=coord, radius=4, color='red', fill=True).add_to(mission_map)
 
-
+    if (is_reversed):
+        drone_waypoints = list(reversed(drone_waypoints))
     for idx, wp in enumerate(drone_waypoints):
-        print(f"{wp[0]}, {wp[1]}")
+        print(f"({wp[0]}, {wp[1]}, {flight_altitude}),")
         folium.Marker(location=wp, popup=f"WP {idx+1}",
                     icon=folium.Icon(color='blue', icon='info-sign')).add_to(mission_map)
         
@@ -236,6 +241,6 @@ if __name__ == "__main__":
                     opacity=0.8, fill=True, fill_opacity=0.2).add_to(mission_map)
 
     # Call this function using your drone waypoints
-    save_to_mission_planner_file(drone_waypoints, flight_altitude, reverse=True)
+    save_to_mission_planner_file(drone_waypoints, flight_altitude)
     mission_map.save('mission_waypoints.html')
     print("Map saved as 'mission_waypoints.html'.")
