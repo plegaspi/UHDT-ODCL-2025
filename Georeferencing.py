@@ -21,7 +21,6 @@ def extractMetadata(fileName):
 def Georeference(target_pixel_coordinates, drone_latitude, drone_longitude, drone_altitude, altitude_offset, drone_yaw, sensor_w, sensor_h, pix_width, pix_height, focal_length):
     # Constants for image resolution and camera field of view
     pixel_resolution = (pix_width, pix_height) # Image pixel dimensions
-    drone_altitude -= altitude_offset
     horizontal_fov =  2*math.degrees(math.atan(sensor_w/(2*focal_length)))
     vertical_fov = 2*math.degrees(math.atan(sensor_h/(2*focal_length)))
 
@@ -73,7 +72,6 @@ def Georeference2(target_pixel_coordinates, drone_latitude, drone_longitude, dro
     vert_fov = 2*math.degrees(math.atan(sensor_h/(2*focal_length)))
     horizontal_fov = horiz_fov  # Horizontal field of view in degrees
     vertical_fov = vert_fov     # Vertical field of view in degrees
-    drone_altitude -= altitude_offset
 
     altitude = drone_altitude - altitude_offset
 
