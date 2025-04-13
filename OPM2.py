@@ -107,10 +107,11 @@ def Optimized_Payload_Matching(valid_target_names, detected_targets, default_coo
             used_quadrants.add(get_quadrant_index(midpoint, t.latitude, t.longitude))
 
         # Add dummy targets in unoccupied quadrants until there's 4 total
-        for i, (lon, lat) in enumerate(default_coordinates):
+        for i, (lat, lon) in enumerate(default_coordinates):
             if len(top_targets) >= 4:
                 break
             if i not in used_quadrants:
+                
                 dummy = Target("Dummy", 0.0, latitude=lat, longitude=lon)
                 top_targets.append(dummy)
 
