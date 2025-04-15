@@ -3,7 +3,7 @@ from shapely.geometry import Polygon, Point
 from pyproj import Transformer
 import offline_folium
 import folium
-
+import json
 import math
 
 
@@ -157,6 +157,17 @@ def save_to_mission_planner_file(waypoints, altitude, filename="mission.waypoint
     
     print(f"Saved Mission Planner file as '{filename}' ({'reversed' if reverse else 'normal'} order)")
 
+def export_search_area_waypoints(search_waypoints, filepath):
+
+    search_waypoint_object = {
+        "search_waypoints": search_waypoints
+    }
+
+    with open(filepath, "w") as f:
+        json.dump(search_waypoint_object, f, indent=4)
+    
+    print(f"Saved waypoints to {filepath}")
+
 if __name__ == "__main__":
     from Config import Config
     from OPM2 import calculate_default_drop_coordinates, sort_coordinates
@@ -176,7 +187,8 @@ if __name__ == "__main__":
     vertical_fov = 20.469605526846422     # degrees
     overlap = 20              # % overlap
     flight_altitude = 22.5   # meters
-    is_reversed = False
+    is_reversed = True
+    waypoint_save_path = "/home/uhdt/ws2_livox/waypoints.json"
 
 
     boundary_coords = [bound1, bound2, bound3, bound4, bound1]
@@ -243,4 +255,5 @@ if __name__ == "__main__":
     # Call this function using your drone waypoints
     save_to_mission_planner_file(drone_waypoints, flight_altitude)
     mission_map.save('mission_waypoints.html')
+    export_search_area_waypoints(drone_waypoints, waypoint_save_path)
     print("Map saved as 'mission_waypoints.html'.")
