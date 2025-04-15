@@ -1,5 +1,7 @@
 import math
 from pyproj import Transformer
+import math
+import pymap3d as pm
 from exiftool import ExifToolHelper
 
 def extractMetadata(fileName):
@@ -17,7 +19,7 @@ def extractMetadata(fileName):
             dpi_resolution = metadata['EXIF:XResolution']
             focal_length = metadata['EXIF:FocalLength']
             return metadata, latitude, longitude, altitude, yaw, pix_width, pix_height, focal_length
-        
+
 def Georeference(target_pixel_coordinates, drone_latitude, drone_longitude, drone_altitude, altitude_offset, drone_yaw, sensor_w, sensor_h, pix_width, pix_height, focal_length):
     # Constants for image resolution and camera field of view
     pixel_resolution = (pix_width, pix_height) # Image pixel dimensions
@@ -46,6 +48,7 @@ def Georeference(target_pixel_coordinates, drone_latitude, drone_longitude, dron
     target_pixel_x, target_pixel_y = target_pixel_coordinates
     image_center_x, image_center_y = pixel_resolution[0] / 2, pixel_resolution[1] / 2
     delta_x, delta_y = target_pixel_x - image_center_x, target_pixel_y - image_center_y
+    delta_y *= 1
 
     # Adjust for drone's yaw (orientation)
     drone_yaw_rad = math.radians(drone_yaw)
@@ -64,7 +67,51 @@ def Georeference(target_pixel_coordinates, drone_latitude, drone_longitude, dron
     target_longitude, target_latitude = inv_transformer.transform(target_x, target_y)
 
     return target_latitude, target_longitude
-    
+  
+
+def Georeference1(
+    target_pixel_coordinates,
+    drone_latitude, drone_longitude, drone_altitude,
+    altitude_offset, drone_yaw,
+    sensor_w, sensor_h, pix_width, pix_height, focal_length
+):
+    # Adjust altitude if necessary
+    altitude = drone_altitude - altitude_offset
+
+    # Field of view
+    horizontal_fov = 2 * math.degrees(math.atan(sensor_w / (2 * focal_length)))
+    vertical_fov = 2 * math.degrees(math.atan(sensor_h / (2 * focal_length)))
+
+    # Ground footprint dimensions at altitude
+    image_width = 2 * altitude * math.tan(math.radians(horizontal_fov / 2))
+    image_height = 2 * altitude * math.tan(math.radians(vertical_fov / 2))
+
+    # Image center and pixel offset
+    image_center_x, image_center_y = pix_width / 2, pix_height / 2
+    target_pixel_x, target_pixel_y = target_pixel_coordinates
+
+    delta_x = target_pixel_x - image_center_x
+    delta_y = target_pixel_y - image_center_y
+    delta_y *= 1  # Flip y to match ENU
+
+    # Rotate according to yaw (convert to radians)
+    yaw_rad = math.radians(drone_yaw)
+    corrected_dx = delta_x * math.cos(yaw_rad) - delta_y * math.sin(yaw_rad)
+    corrected_dy = delta_x * math.sin(yaw_rad) + delta_y * math.cos(yaw_rad)
+
+    # Convert from pixel offset to real-world distance in meters
+    east_offset = corrected_dx * image_width / pix_width
+    north_offset = corrected_dy * image_height / pix_height
+    up_offset = 0  # Nadir view, so no change in vertical
+
+    # Convert local ENU offset back to GPS
+    target_lat, target_lon, _ = pm.enu2geodetic(
+        east_offset, north_offset, up_offset,
+        drone_latitude, drone_longitude, drone_altitude
+    )
+
+    return target_lat, target_lon
+  
 def Georeference2(target_pixel_coordinates, drone_latitude, drone_longitude, drone_altitude, altitude_offset, drone_yaw, sensor_w, sensor_h, pix_width, pix_height, focal_length):
     # Constants for image resolution and camera field of view
     pixel_resolution = (pix_width, pix_height)  # Image pixel dimensions
@@ -92,6 +139,7 @@ def Georeference2(target_pixel_coordinates, drone_latitude, drone_longitude, dro
     target_pixel_x, target_pixel_y = target_pixel_coordinates
     image_center_x, image_center_y = pixel_resolution[0] / 2, pixel_resolution[1] / 2
     delta_x, delta_y = target_pixel_x - image_center_x, target_pixel_y - image_center_y
+    delta_y *= 1
 
     # Adjust for drone's yaw (orientation)
     drone_yaw_rad = math.radians(drone_yaw)
@@ -139,6 +187,7 @@ def Georeference3(target_pixel_coordinates, drone_latitude, drone_longitude, dro
     # Calculate distance from image center to target pixel
     delta_x = target_pixel_x - image_center_x
     delta_y = target_pixel_y - image_center_y
+    delta_y *= 1
 
     # Calculate distance from image center to target pixel after correction
     corrected_delta_x = delta_x * math.cos(drone_yaw_rad) - delta_y * math.sin(drone_yaw_rad)
@@ -156,7 +205,7 @@ def Georeference3(target_pixel_coordinates, drone_latitude, drone_longitude, dro
     target_latitude = drone_latitude + (y_meters / 111319.944)
     target_longitude = drone_longitude + (x_meters / (111319.944 * math.cos(math.radians(drone_latitude))))
 
-    return abs(target_latitude), abs(target_longitude)*-1
+    return target_latitude, target_longitude
 
 
 #Return Distance Between Two GPS points in meters
@@ -176,24 +225,28 @@ def haversine(lat1, lon1, lat2, lon2):
     return distance
 
 if __name__ == '__main__':
-    target_pixel_coordinates = (4893,1587)
-    image_file = "/Users/plegaspi/Downloads/6-20250407T051915Z-001/4-6/1969-12-31_16_29_03/3/captured_19691231162907.jpg"
+    target_pixel_coordinates = (1079.4033203125, 3303.25146484375)
+    image_file = "/Users/plegaspi/Documents/UHDT/UHDT-ODCL-2025/runtime/20250414_234100_flight_testing/source/11.jpg"
     sensor_width = 23.55
     sensor_height = 15.6
-    actual_coords = (21.4002845, -157.7643118)
+    actual_coords = (21.4002798, -157.7644341)
     actual_lat, actual_long = actual_coords
-    altitude_offset = 0.2159
+    altitude_offset = 0
     mmetadata, latitude, longitude, altitude, yaw, pix_width, pix_height, focal_length = extractMetadata(image_file)
-    target_latitude, target_longitude = georeference(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
-    target_latitude2, target_longitude2 = georeference2(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
-    target_latitude3, target_longitude3 = georeference3(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
+    target_latitude, target_longitude = Georeference(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
+    target_latitude1, target_longitude1 = Georeference1(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
+    target_latitude2, target_longitude2 = Georeference2(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
+    target_latitude3, target_longitude3 = Georeference3(target_pixel_coordinates, latitude, longitude, altitude, altitude_offset, yaw, sensor_width, sensor_width, pix_width, pix_height, focal_length)
     distance = haversine(target_latitude, target_longitude,actual_lat, actual_long)
+    distance1 = haversine(target_latitude1, target_longitude1,actual_lat, actual_long)
     distance2 = haversine(target_latitude2, target_longitude2,actual_lat, actual_long)
     distance3 = haversine(target_latitude3, target_longitude3,actual_lat, actual_long)
     print(f'GPS Latitude:{target_latitude} GPS Longitude:{target_longitude}')
+    print(f'GPS Latitude:{target_latitude1} GPS Longitude:{target_longitude}')
     print(f'GPS Latitude:{target_latitude2} GPS Longitude:{target_longitude2}')
     print(f'GPS Latitude:{target_latitude3} GPS Longitude:{target_longitude3}')
     print(f'Distance from Actual Coordinates: {distance}')
+    print(f'Distance from Actual Coordinates: {distance1}')
     print(f'Distance from Actual Coordinates: {distance2}')
     print(f'Distance from Actual Coordinates: {distance3}')
   
