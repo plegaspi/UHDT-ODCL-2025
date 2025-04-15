@@ -10,7 +10,7 @@ valid_targets: [
 ]
 flight_testing:
   flight_testing_dir: "flight_testing"
-logging: false
+logging: true
 runtime_history_dir: "runtime"
 runtime_folder_override: 
 watch_directory: "/home/uhdt/ws2_livox/images" #synthetic_images/dest

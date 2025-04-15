@@ -1,5 +1,6 @@
 class Target:
-    def __init__(self, predicted_classes, confidence_scores, latitude=None, longitude=None):
+    def __init__(self, image_file_path, predicted_classes, confidence_scores, latitude=None, longitude=None):
+        self.image_file_path = image_file_path
         self.predicted_classes = predicted_classes
         self.confidence_scores = confidence_scores
         self._latitude = None  # Use a private variable
