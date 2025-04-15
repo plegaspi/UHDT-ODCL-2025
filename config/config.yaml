@@ -1,5 +1,5 @@
 mode: "flight_testing"
-debug: true
+debug: false
 targets: ["bus", "car", "person", "ski"]
 number_of_targets: 4
 num_photos: 28
@@ -12,15 +12,15 @@ flight_testing:
   flight_testing_dir: "flight_testing"
 logging: false
 runtime_history_dir: "runtime"
-runtime_folder_override: "odcl_demo"
-watch_directory: "synthetic_images/dest"
-waypoint_file_path: "waypoints.txt"
+runtime_folder_override: 
+watch_directory: "/home/uhdt/ws2_livox/images" #synthetic_images/dest
+waypoint_file_path: "/home/uhdt/ws2_livox/ip_waypoints/test.txt"
 airdrop:
   boundary:
-    bound_1: [21.400355, -157.764440]
-    bound_2: [21.400551, -157.763874]
-    bound_3: [21.400778, -157.763964]
-    bound_4: [21.400607, -157.764499]
+    bound_1: [21.4000934, -157.7645798]
+    bound_2: [21.4004355, -157.7637832]
+    bound_3: [21.4005653, -157.7638905]
+    bound_4: [21.4002307, -157.7646790]
   flight_testing:
     option_1: [21.40096,-157.76345]
     option_2: [21.40096,-157.76495]
@@ -50,12 +50,20 @@ camera:
     f-number: 8
     shutterspeed: 10
     d01c: 
-    d170: 
+    d170:
+  search_area_calculator:
+    photo_height: 7728
+    photo_width: 5152
+    horizontal_fov: 30.493403035878764
+    vertical_fov: 20.469605526846422 
+    overlap: 20 # Overlap percentage
+    flight_altitude: 22.5 # Meters
+    is_reversed: True
 object_detection:
-  model: "weight/v9.pt"
+  model: "/home/uhdt/UHDT-ODCL-2025/weight/v9.pt"
   model_type: 'yolov8'
-  confidence_threshold: 0.25
-  device: "mpss"
+  confidence_threshold: 0.1
+  device: "cuda:0"
   sahi:
     slice: false
     slice_height: 640

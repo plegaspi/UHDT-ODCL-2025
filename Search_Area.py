@@ -168,6 +168,65 @@ def export_search_area_waypoints(search_waypoints, filepath):
     
     print(f"Saved waypoints to {filepath}")
 
+def export_map(map_file_path, boundary_coords, drone_waypoints, flight_altitude, angle, rect_centroid, transformer_to_utm, transformer_from_utm, ground_width, ground_height, n_cols, n_rows, is_reversed):
+    center_lat = sum(pt[0] for pt in boundary_coords) / len(boundary_coords)
+    center_lon = sum(pt[1] for pt in boundary_coords) / len(boundary_coords)
+
+    print(f"Grid: {n_cols} columns, {n_rows} rows")
+    print(f"Total waypoints: {len(drone_waypoints)}")
+    total = calculate_total_distance(drone_waypoints)
+    print(f"Total distance traveled: {total:.2f} meters")
+
+
+    mission_map = folium.Map(location=[center_lat, center_lon], zoom_start=18)
+
+
+    folium.PolyLine(locations=boundary_coords, color='red', weight=2.5, opacity=1).add_to(mission_map)
+    for coord in boundary_coords:
+        folium.CircleMarker(location=coord, radius=4, color='red', fill=True).add_to(mission_map)
+
+    if (is_reversed):
+        drone_waypoints = list(reversed(drone_waypoints))
+    for idx, wp in enumerate(drone_waypoints):
+        print(f"({wp[0]}, {wp[1]}, {flight_altitude}),")
+        folium.Marker(location=wp, popup=f"WP {idx+1}",
+                    icon=folium.Icon(color='blue', icon='info-sign')).add_to(mission_map)
+        
+
+    folium.PolyLine(locations=drone_waypoints, color='blue', weight=2.5, opacity=1).add_to(mission_map)
+
+
+    half_width_val = ground_width / 2.0
+    half_height_val = ground_height / 2.0
+    local_corners = [
+        (-half_width_val, -half_height_val),
+        ( half_width_val, -half_height_val),
+        ( half_width_val,  half_height_val),
+        (-half_width_val,  half_height_val)
+    ]
+
+    for wp in drone_waypoints:
+        wp_utm = transformer_to_utm.transform(wp[1], wp[0])
+        footprint_utm = []
+        for corner in local_corners:
+            rotated = rotate_point_local(corner, angle)
+            corner_utm = (wp_utm[0] + rotated[0], wp_utm[1] + rotated[1])
+            footprint_utm.append(corner_utm)
+        footprint_utm.append(footprint_utm[0])
+        
+        footprint_gps = []
+        for x, y in footprint_utm:
+            lon, lat = transformer_from_utm.transform(x, y)
+            footprint_gps.append((lat, lon))
+        
+        folium.Polygon(locations=footprint_gps, color='green', weight=1.5,
+                    opacity=0.8, fill=True, fill_opacity=0.2).add_to(mission_map)
+
+
+    save_to_mission_planner_file(drone_waypoints, flight_altitude)
+    mission_map.save(map_file_path)
+    print(f"Map saved as 'f{map_file_path}'.")
+
 if __name__ == "__main__":
     from Config import Config
     from OPM2 import calculate_default_drop_coordinates, sort_coordinates
