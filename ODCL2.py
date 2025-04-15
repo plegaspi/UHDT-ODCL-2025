@@ -28,6 +28,7 @@ from Object_Detection import Object_Detection, adjust_bbox
 from Georeferencing import Georeference, haversine, extractMetadata
 from OPM2 import Optimized_Payload_Matching, create_waypoint_file, calculate_default_drop_coordinates, sort_coordinates, get_midpoint
 import Camera
+from Search_Area import plan_mission, export_map
 
 #####################
 # Payload Delivery  #
@@ -52,7 +53,6 @@ debug = config.params["debug"]
 watch_dir_path = config.watch_dir_path
 watch_delay = 2
 waypoint_file_path = config.params["waypoint_file_path"]
-
 
 ##########
 # Camera #
@@ -201,6 +201,7 @@ default_drop_coordinates = calculate_default_drop_coordinates(sort_coordinates([
 num_photos_processed = 0
 last_processed_time = None
 timeout = False
+timeout_duration = config.params["timeout_duration"]
 target_list = []
 payload_list = []
 
@@ -213,7 +214,6 @@ def watch_directory():
     global timeout 
     timeout = False
     last_processed_time = time.time()  
-    timeout_duration = 60  
 
     logging.info("File Watcher Initiated")  
     logging.info(f"Watching {watch_dir_path}")
@@ -253,7 +253,7 @@ def watch_directory():
 
         if time.time() - last_processed_time > timeout_duration:
             timeout = True
-            print("Timed out: No new files processed for 30 seconds")
+            print(f"Timed out: No new files processed for {timeout_duration} seconds")
             break
 
         time.sleep(watch_delay)  
@@ -351,3 +351,8 @@ def ODCL(img, img_path, source_destination_path, detection_model, sahi_config, d
 if __name__ == "__main__":
     initialize(mode)
     watch_directory()
+    print("Completed")
+    with open("completed.txt", "w") as f:
+        f.write("")
+
+
