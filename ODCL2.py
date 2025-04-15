@@ -231,8 +231,10 @@ def watch_directory():
 
                 source_img_flag = os.path.splitext(source_img_path)[0]
                 source_img_flag_path = f"{source_img_flag}.txt"
-                while not os.path.exists(source_img_path) or os.path.getsize(source_img_path) == 0 or not os.path.exists(source_img_flag_path):
-                    pass
+                if config.params["debug"] == True:
+                    source_img_flag_path = f"{source_img_flag}.txt"
+                    while not os.path.exists(source_img_path) or os.path.getsize(source_img_path) == 0 or not os.path.exists(source_img_flag_path):
+                        pass
 
                 source_img = Image.open(source_img_path)
                 logging.info(f"Processing {source_img_path}")
@@ -264,6 +266,7 @@ def watch_directory():
         #sorted_coords = sort_coordinates(m_parameter)
         #m_coordinates = defaultdropcoordinates(sorted_coords)
         waypoints = Optimized_Payload_Matching(targets, target_list, default_drop_coordinates)
+        results_logger.info(waypoints)
         create_waypoint_file(waypoints, waypoint_file_path)
         create_waypoint_file(waypoints, os.path.join(runtime_dir, waypoint_file_path))
         logging.info(f"Wrote waypoint file for {len(waypoints)} at {waypoint_file_path} and {runtime_dir}/waypoints.txt")
