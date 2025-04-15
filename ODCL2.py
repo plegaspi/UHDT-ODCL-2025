@@ -38,7 +38,7 @@ from payloadDelivery import deliveryScript
 #################
 # Configuration #
 #################
-config = Config("config/config.yaml")
+config = Config("/home/uhdt/UHDT-ODCL-2025/config/config.yaml")
 targets = config.targets
 num_photos = config.params["num_photos"]
 mode = config.params["mode"]
@@ -57,7 +57,7 @@ waypoint_file_path = config.params["waypoint_file_path"]
 ##########
 # Camera #
 ##########
-config = Config("config/config.yaml")
+#config = Config("config/config.yaml")
 load_camera_config = config.params["camera"]["load_config"]
 load_ext_camera_config = config.params["camera"]["load_ext_config"]
 camera_config_file = config.params["camera"]["ext_config"]
@@ -65,6 +65,7 @@ camera_yaml_config= config.params["camera"]["config"]
 
 preset = None
 
+"""
 if load_ext_camera_config:
     with open(camera_config_file) as f:
         camera_config = json.load(f)
@@ -73,7 +74,7 @@ if load_ext_camera_config:
             preset[key] = value
 else:
     preset = {key: value for key, value in camera_yaml_config.items() if value is not None}
-
+"""
     
 
 
@@ -90,7 +91,7 @@ from Logger import *
 #######################
 logging_enabled = config.params["logging"]
 runtime_history_dir = config.params["runtime_history_dir"]
-if config.params["runtime_folder_override"] != "":
+if config.params["runtime_folder_override"]:
     runtime_dir = os.path.join(config.params["runtime_folder_override"])
     if os.path.exists(config.params["runtime_folder_override"]):
         shutil.rmtree(config.params["runtime_folder_override"])
@@ -212,12 +213,12 @@ def watch_directory():
     global timeout 
     timeout = False
     last_processed_time = time.time()  
-    timeout_duration = 30  
+    timeout_duration = 60  
 
     logging.info("File Watcher Initiated")  
     logging.info(f"Watching {watch_dir_path}")
 
-    while len(target_list) < len(targets) and num_photos_processed < num_photos and not timeout:
+    while num_photos_processed < num_photos and not timeout:
         for file_name in os.listdir(watch_dir_path):
             if num_photos_processed >= num_photos:
                 print(f"Reached image limit of {num_photos}")  
@@ -227,8 +228,11 @@ def watch_directory():
                 source_img_path = os.path.join(watch_dir_path, file_name)
 
 
-                while not os.path.exists(source_img_path) or os.path.getsize(source_img_path) == 0:
-                    time.sleep(1)
+
+                source_img_flag = os.path.splitext(source_img_path)[0]
+                source_img_flag_path = f"{source_img_flag}.txt"
+                while not os.path.exists(source_img_path) or os.path.getsize(source_img_path) == 0 or not os.path.exists(source_img_flag_path):
+                    pass
 
                 source_img = Image.open(source_img_path)
                 logging.info(f"Processing {source_img_path}")
