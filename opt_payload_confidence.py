@@ -1,10 +1,10 @@
 def opt_payload(targets, target_list):
-    points = 400 
+    
     det_target =[]
     # getting target name only 
     for d in range(len(target_list)):
         det_target.append(target_list[d])
-
+        
     payload = [0,0,0,0]
     #case 1 only 1 detection found 
     # drop all payloads onto detected target 
@@ -21,7 +21,6 @@ def opt_payload(targets, target_list):
     
     ind = []
     if len(target_list) == 2:
-        points= 200
         a=0
         while a<2:
             for i in range(4):
@@ -35,7 +34,7 @@ def opt_payload(targets, target_list):
         #check confidence and rearrange 
         # update confidence check by putting a restriction on how close the value can be to the bigger value
         if target_list[0][1] < target_list[1][1]:
-            if target_list[0][1]<0.3 and target_list[0][1]<(target_list[1][1]- 0.1):
+            if target_list[0][1]<0.5 and target_list[0][1]<(target_list[1][1]- 0.1):
                 if target_list[0][1]<0.2:
                   payload[ind[1]] = 4
                   payload[ind[0]] = 0
@@ -49,7 +48,7 @@ def opt_payload(targets, target_list):
             if target_list[0][1] == target_list[1][1]:
                 pass
             else:
-                if target_list[1][1]<0.3 and target_list[1][1]<(target_list[0][1]- 0.1):
+                if target_list[1][1]<0.5 and target_list[1][1]<(target_list[0][1]- 0.1):
                     if target_list[1][1]<0.2:
                         payload[ind[0]] = 4
                         payload[ind[1]] = 0
@@ -59,8 +58,6 @@ def opt_payload(targets, target_list):
                 else:
                     pass         
     
-                  
-        return payload, det_target
     else:
         pass
         
@@ -86,14 +83,14 @@ def opt_payload(targets, target_list):
                 max_index = ind[men]
             else:
                 pass
-        payload[max_index]=2
+
         rep =0 
         for n in range(len(target_list)):
             if max_ == target_list[n][1]:
                 pass
             else:
                 if rep == 1:
-                    if target_list[n][1]<0.3 and target_list[n][1]< max_ - 0.15:
+                    if target_list[n][1]<0.4 and target_list[n][1]< max_ - 0.15:
                         for man in range(4):
                             if targets[man]==target_list[n][0]:
                                 payload[man] = 0
@@ -101,7 +98,7 @@ def opt_payload(targets, target_list):
                             else:
                                 pass
                 else:    
-                    if target_list[n][1]<0.4 and target_list[n][1]<max_ - 0.15:
+                    if target_list[n][1]<0.5 and target_list[n][1]<max_ - 0.15:
                         for man in range(4):
                             if targets[man]==target_list[n][0]:
                                 payload[man] = 0
@@ -111,7 +108,6 @@ def opt_payload(targets, target_list):
                         rep = 1
                     else:
                         pass              
-        return payload, det_target, max_index
     else:
         pass
 
@@ -154,7 +150,7 @@ def opt_payload(targets, target_list):
                                 pass
                 else:
                     if rep == 1:
-                        if target_list[n][1]<0.30 and target_list[n][1]< max_ - 0.15:
+                        if target_list[n][1]<0.4 and target_list[n][1]< max_ - 0.15:
                             for man in range(4):
                                 if targets[man]==target_list[n][0]:
                                     payload[man] = 0
@@ -164,7 +160,7 @@ def opt_payload(targets, target_list):
                                     pass
                     else:
                         if rep == 2:
-                            if target_list[n][1]<0.20 and target_list[n][1]< max_ - 0.15:
+                            if target_list[n][1]<0.35 and target_list[n][1]< max_ - 0.15:
                                 for man in range(4):
                                     if targets[man]==target_list[n][0]:
                                         payload[man] = 0
@@ -172,10 +168,6 @@ def opt_payload(targets, target_list):
                                     else:
                                         pass
                             
-                    
-
-        
-        return payload ,det_target
     
     # case 5 when more than 4 targets are detected
     if len(target_list)>4:
@@ -243,10 +235,30 @@ def opt_payload(targets, target_list):
                                             payload[max_index] = 4
                                         else:
                                             pass
-            return payload, det_target
+    tot_points =400 
+    points_made =0
+    for a in range(4):
+        if payload[a]== 0:
+            pass
+        else:
+            for b in range(len(target_list)):
+                if targets[a] == target_list[b][0]:
+                    if target_list[b][1] <= 0.3:
+                        points_made-=(100*target_list[b][1])
+                    else:
+                        points_made+=(100*target_list[b][1])
+
+                else:
+                    pass
+    return payload, det_target, points_made
+
+
+
+
 
 if __name__ == "__main__":
     targets = ['bus', 'airplane', 'umbrella', 'car']
+
     # test for case_1
     target_list_0 = [['bus',0.4]]
     payload_0 , det_target_0 = opt_payload(targets, target_list_0)
@@ -254,26 +266,25 @@ if __name__ == "__main__":
 
     # test for case 2 
     target_list = [['car', 0.31], ['bus', 0.19]]
-    payload,det_target= opt_payload(targets, target_list)
-    #print(payload, det_target)
+    payload,det_target, points_made= opt_payload(targets, target_list)
+    #print(payload, det_target, points_made)
 
     #test for case 3 
     target_list_1 = [['bus', 0.3], ['car', 0.8], ['umbrella', 0.35]]
-    payload_1 , det_target_1, index= opt_payload(targets, target_list_1)
-    #print(payload_1, det_target_1, index)
+    payload_1 , det_target_1, points_made_1 = opt_payload(targets, target_list_1)
+    print(payload_1, det_target_1,points_made_1)
 
     # test for case 4
     target_list_2 = [['bus', 0.28], ['car', 0.8], ['airplane', 0.43], ['umbrella',0.78]]
-    payload_2, det_target_2= opt_payload(targets, target_list_2)
-    #print(payload_2,det_target_2)
+    payload_2, det_target_2, points_made_2= opt_payload(targets, target_list_2)
+    #print(payload_2,det_target_2, points_made_2)
 
     #test case 5
     target_list_3 = [['bus', 0.5], ['car', 0.8], ['airplane', 0.6], ['umbrella',0.78], ['bus', 0.1], ['umbrella', 0.23]]
-    payload_3 = opt_payload(targets, target_list_3)
-    print(payload_3)
+    payload_3,det_target_3, points_made_3= opt_payload(targets, target_list_3)
+    #print(payload_3, det_target_3, points_made_3)
 
 
-# confidence values be implemented using arbitrary values picked and another way would be weighing the values and using points to determine the most efficent way?
 # general coordinates will be given for later
 
 
