@@ -1,11 +1,13 @@
 import subprocess
-
+from Config import Config
 scripts = ["simulate_watch_directory.py", "ODCL2.py", "show_detections.py"]
 
 processes = []
 
 # Start Process 1 (simulate_watch_directory.py) in parallel
-processes.append(subprocess.Popen(["python", scripts[0], "synthetic_images/source2", "synthetic_images/dest"]))
+config = Config("config/config.yaml")
+watch_dir_path = config.watch_dir_path
+processes.append(subprocess.Popen(["python", scripts[0], "synthetic_images/source", watch_dir_path]))
 
 # Start Process 2 (ODCL2.py) and wait for it to finish
 process2 = subprocess.Popen(["python", scripts[1]])

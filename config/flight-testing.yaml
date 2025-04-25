@@ -1,5 +1,5 @@
 mode: flight_testing
-debug: false
+debug: true
 targets:
 - bus
 - car
@@ -30,8 +30,8 @@ flight_testing:
 logging: true
 runtime_history_dir: runtime
 runtime_folder_override: null
-watch_directory: synthetic_images/dest
-waypoint_file_path: waypoints/test.txt
+watch_directory: /home/uhdt/ws2_livox/images
+waypoint_file_path: /home/uhdt/ws2_livox/ip_waypoints/test.txt
 airdrop:
   boundary:
     bound_1:
@@ -110,7 +110,7 @@ camera:
 object_detection:
   model: /home/uhdt/UHDT-ODCL-2025/weight/v9.pt
   model_type: yolov8
-  confidence_threshold: 0.2
+  confidence_threshold: 0.9
   device: cuda:0
   sahi:
     slice: false

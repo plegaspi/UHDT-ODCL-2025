@@ -27,8 +27,6 @@ from classes import Target
 from Object_Detection import Object_Detection, adjust_bbox
 from Georeferencing import Georeference, haversine, extractMetadata
 from OPM2 import Optimized_Payload_Matching, create_waypoint_file, calculate_default_drop_coordinates, sort_coordinates, get_midpoint
-import Camera
-from Search_Area import plan_mission, export_map
 
 #####################
 # Payload Delivery  #
@@ -39,7 +37,19 @@ from payloadDelivery import deliveryScript
 #################
 # Configuration #
 #################
-config = Config("config/local_config.yaml")
+import argparse
+# Argument parser
+parser = argparse.ArgumentParser(description="Run ODCL2 with optional flight-testing config.")
+parser.add_argument('--flight-testing', action='store_true', help="Use flight-testing configuration file")
+args = parser.parse_args()
+
+# Config selection
+config_path = "/home/uhdt/UHDT-ODCL-2025/config/config.yaml"
+
+if args.flight_testing:
+    config_path = "/home/uhdt/UHDT-ODCL-2025/config/flight-testing.yaml"
+    
+config = Config(config_path)
 targets = config.targets
 num_photos = config.params["num_photos"]
 mode = config.params["mode"]
@@ -96,7 +106,7 @@ if config.params["runtime_folder_override"]:
     if os.path.exists(config.params["runtime_folder_override"]):
         shutil.rmtree(config.params["runtime_folder_override"])
 else:
-    runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_flight_testing")
+    runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%m%d%Y_%H%M%S')}_flight_testing")
 
 log_files_dir = os.path.join(runtime_dir, "logs")
 runtime_log_path = os.path.join(log_files_dir, "runtime.log")

@@ -112,7 +112,7 @@ def Optimized_Payload_Matching(valid_target_names, detected_targets, default_coo
                 break
             if i not in used_quadrants:
                 
-                dummy = Target("Dummy", 0.0, latitude=lat, longitude=lon)
+                dummy = Target("Dummy", "None", 0.0, latitude=lat, longitude=lon)
                 top_targets.append(dummy)
 
     real_targets = [t for t in top_targets if t.predicted_classes != "Dummy"]
