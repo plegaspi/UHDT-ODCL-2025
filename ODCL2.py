@@ -48,7 +48,7 @@ config_path = "/home/uhdt/UHDT-ODCL-2025/config/config.yaml"
 
 if args.flight_testing:
     config_path = "/home/uhdt/UHDT-ODCL-2025/config/flight-testing.yaml"
-    
+
 config = Config(config_path)
 targets = config.targets
 num_photos = config.params["num_photos"]
@@ -106,7 +106,7 @@ if config.params["runtime_folder_override"]:
     if os.path.exists(config.params["runtime_folder_override"]):
         shutil.rmtree(config.params["runtime_folder_override"])
 else:
-    runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%m%d%Y_%H%M%S')}_flight_testing")
+    runtime_dir = os.path.join(runtime_history_dir, f"{datetime.now().strftime('%m_%d%-%H_%M_%S')}_flight_testing")
 
 log_files_dir = os.path.join(runtime_dir, "logs")
 runtime_log_path = os.path.join(log_files_dir, "runtime.log")
